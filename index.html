@@ -219,17 +219,13 @@
           <input type="file" id="foto-struk-galeri" accept="image/*" class="hidden" onchange="previewGambar(event)">
 
           <div class="grid grid-cols-2 gap-2">
-            <button type="button" onclick="bukaKameraLiveModal()" class="ios-btn bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-indigo-200">
-              <i class="fa-solid fa-video text-sm"></i> Kamera Live
+            <button type="button" onclick="panggilKameraKodular()" class="ios-btn bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-indigo-200">
+              <i class="fa-solid fa-camera text-sm"></i> Buka Kamera
             </button>
             <button type="button" onclick="document.getElementById('foto-struk-galeri').click()" class="ios-btn bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold py-3 px-2 rounded-xl text-xs flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-image text-slate-600 text-sm"></i> Pilih Galeri
             </button>
           </div>
-          
-          <button type="button" onclick="document.getElementById('foto-struk-kamera').click()" class="text-xs text-indigo-600 font-medium underline block mx-auto">
-            Atau gunakan kamera native HP
-          </button>
 
           <div id="preview-container" class="hidden relative rounded-xl overflow-hidden border border-slate-200 shadow-inner">
             <img id="img-preview" class="w-full h-48 object-cover" src="" alt="Preview Struk">
@@ -277,26 +273,6 @@
     </section>
 
   </main>
-
-  <div id="camera-modal" class="fixed inset-0 z-50 bg-black/90 hidden flex flex-col items-center justify-center p-4">
-    <div class="w-full max-w-sm bg-slate-900 rounded-3xl overflow-hidden shadow-2xl relative flex flex-col items-center">
-      <div class="w-full p-3 bg-slate-800 text-white flex justify-between items-center px-4">
-        <span class="text-xs font-bold"><i class="fa-solid fa-camera mr-2 text-indigo-400"></i> Kamera Live</span>
-        <button onclick="tutupKameraLiveModal()" class="text-slate-400 hover:text-white p-1">
-          <i class="fa-solid fa-xmark text-base"></i>
-        </button>
-      </div>
-      <div class="relative w-full h-72 bg-black flex items-center justify-center">
-        <video id="video-stream" autoplay playsinline class="w-full h-full object-cover"></video>
-        <div class="absolute inset-4 border-2 border-dashed border-indigo-400/60 rounded-xl pointer-events-none"></div>
-      </div>
-      <div class="p-4 w-full bg-slate-900 flex justify-center">
-        <button onclick="jepretFotoKamera()" class="ios-btn bg-white text-indigo-600 font-bold px-6 py-3 rounded-full text-xs shadow-xl flex items-center gap-2">
-          <i class="fa-solid fa-circle text-rose-500 text-sm"></i> Jepret Struk
-        </button>
-      </div>
-    </div>
-  </div>
 
   <div id="modal-edit" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4 animate-fade-in">
@@ -392,7 +368,6 @@
   </nav>
 
   <script>
-    // Enkripsi Base64 API Key untuk mencegah pembatalan otomatis oleh GitHub Secret Scanner
     const OBFUSCATED_KEY = "QUl6YVN5Q2R6LVk5MHBUTENrZ2Q0OWM5Q2NodE1uSThQcmltTG9v";
     const DB_KEY = 'kaspintar_ios_db';
     
@@ -401,7 +376,6 @@
     let chartKategoriInstance = null;
     let chartArusKasInstance = null;
     let selectedImageBase64 = null;
-    let mediaStreamTrack = null;
     let confirmCallback = null;
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -464,8 +438,6 @@
     }
 
     function switchTab(tabName) {
-      tutupKameraLiveModal();
-
       ['beranda', 'transaksi', 'laporan', 'scan', 'pengaturan'].forEach(v => {
         document.getElementById(`view-${v}`).classList.add('hidden');
         const tabEl = document.getElementById(`tab-${v}`);
@@ -496,46 +468,20 @@
       }
     }
 
-    async function bukaKameraLiveModal() {
-      const modal = document.getElementById('camera-modal');
-      const video = document.getElementById('video-stream');
-
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } },
-          audio: false
-        });
-        mediaStreamTrack = stream;
-        video.srcObject = stream;
-        modal.classList.remove('hidden');
-      } catch (err) {
-        console.warn("Live WebRTC Camera error/blocked. Beralih ke kamera native:", err);
-        showToast('Kamera Live tidak didukung. Membuka kamera HP...', 'info');
+    // Fungsi pemanggil kamera native Kodular
+    function panggilKameraKodular() {
+      if (window.AppInventor) {
+        window.AppInventor.setWebViewString('TAKE_PHOTO');
+      } else {
+        // Fallback jika dibuka di browser biasa komputer
         document.getElementById('foto-struk-kamera').click();
       }
     }
 
-    function tutupKameraLiveModal() {
-      const modal = document.getElementById('camera-modal');
-      if (mediaStreamTrack) {
-        mediaStreamTrack.getTracks().forEach(track => track.stop());
-        mediaStreamTrack = null;
-      }
-      modal.classList.add('hidden');
-    }
-
-    function jepretFotoKamera() {
-      const video = document.getElementById('video-stream');
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
-      
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      kompresDanSimpanImage(canvas.toDataURL('image/jpeg', 0.85));
-      tutupKameraLiveModal();
-      showToast('Foto struk berhasil diambil!', 'success');
+    // Fungsi penerima hasil foto dari Kodular Camera1
+    function prosesGambarDariKodular(imagePath) {
+      kompresDanSimpanImage(imagePath);
+      showToast('Foto berhasil diambil dari kamera HP!', 'success');
     }
 
     function previewGambar(event) {
@@ -597,7 +543,6 @@
 
       let dataHasil = null;
 
-      // Engine 1: Gemini AI Cloud
       try {
         if (!navigator.onLine) throw new Error("Offline Mode");
 
@@ -605,8 +550,6 @@
         if (!apiKey) throw new Error("No API Key");
 
         const base64Data = selectedImageBase64.split(',')[1];
-        
-        // Coba model gemini-1.5-flash
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
         const promptText = "Analisis foto nota/struk/bukti transfer ini. Kembalikan data JSON murni dengan field: total (number angka murni tanpa titik), kategori (string singkat), keterangan (string singkat misal nama penerima/merchant), tanggal (string YYYY-MM-DD).";
@@ -640,10 +583,9 @@
           showToast('Berhasil dibaca oleh Gemini AI Cloud!', 'success');
         }
       } catch (err) {
-        console.warn("Engine AI Cloud gagal/offline. Peralihan ke Engine 2 (Tesseract OCR Client-Side)...", err);
+        console.warn("Engine AI Cloud gagal. Peralihan ke Tesseract OCR Offline...", err);
       }
 
-      // Engine 2: Tesseract.js Offline Client-Side OCR Fallback
       if (!dataHasil) {
         statusText.innerText = "Status: Menjalankan Offline Client-Side OCR...";
         try {
@@ -654,7 +596,6 @@
         }
       }
 
-      // Terapkan Hasil ke Form Beranda
       if (dataHasil && (dataHasil.total || dataHasil.kategori || dataHasil.keterangan)) {
         switchTab('beranda');
         if (dataHasil.total) document.getElementById('nominal').value = Number(dataHasil.total);
@@ -682,8 +623,6 @@
       await worker.terminate();
 
       const rawText = ret.data.text;
-      console.log("Raw OCR Text:", rawText);
-
       return parseIndonesianReceiptText(rawText);
     }
 
@@ -693,10 +632,8 @@
       let keterangan = "Struk / Transfer";
       let tanggal = new Date().toISOString().split('T')[0];
 
-      // Clean lines
       const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-      // 1. Cari Nominal Rp
       const amountRegexes = [
         /Nominal\s*[:\s]*Rp?\s*([\d\.,]+)/i,
         /Total\s*[:\s]*Rp?\s*([\d\.,]+)/i,
@@ -717,12 +654,10 @@
         }
       }
 
-      // 2. Cari Nama Penerima / Merchant
       const recipientMatch = text.match(/(?:Nama Penerima|Penerima|Transfer ke|Merchant|Toko)\s*[:\s]*([A-Za-z0-9\s]{3,25})/i);
       if (recipientMatch && recipientMatch[1]) {
         keterangan = recipientMatch[1].trim();
       } else {
-        // Ambil nama dari baris atas
         for (let l of lines.slice(0, 5)) {
           if (l.length > 3 && !l.toLowerCase().includes('berhasil') && !l.toLowerCase().includes('nominal') && !/\d/.test(l)) {
             keterangan = l;
@@ -731,7 +666,6 @@
         }
       }
 
-      // 3. Tentukan Kategori Berdasarkan Keyword
       const textLower = text.toLowerCase();
       if (textLower.includes('transfer') || textLower.includes('nominal') || textLower.includes('biaya') || textLower.includes('penerima') || textLower.includes('bank')) {
         kategori = "Transfer / Tagihan";
@@ -741,7 +675,6 @@
         kategori = "Belanja";
       }
 
-      // 4. Tanggal
       const dateMatch = text.match(/(\d{1,2})[\/\.-](\d{1,2})[\/\.-](\d{2,4})/);
       if (dateMatch) {
         let d = dateMatch[1].padStart(2, '0');
@@ -1007,6 +940,7 @@
       });
     }
 
+    // Perbaikan Unduhan Excel menggunakan Blob URL (Menghilangkan error http/https urls)
     function eksporExcel() {
       if (dataTransaksi.length === 0) {
         showToast('Belum ada data transaksi untuk diekspor!', 'error');
@@ -1024,12 +958,12 @@
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Keuangan");
       
-      // Menggunakan Base64 Data URI agar kompatibel dengan Kodular WebViewer Download
-      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'base64' });
-      const uri = "data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64," + wbout;
+      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const blobUrl = URL.createObjectURL(blob);
       
       const a = document.createElement('a');
-      a.href = uri;
+      a.href = blobUrl;
       a.download = `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.xlsx`;
       document.body.appendChild(a);
       a.click();
@@ -1048,9 +982,11 @@
         csvContent += `${t.tanggal},${t.jenis.toUpperCase()},"${t.kategori}","${t.keterangan || '-'}",${t.nominal}\n`;
       });
 
-      const encodedUri = encodeURI(csvContent);
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const blobUrl = URL.createObjectURL(blob);
+
       const a = document.createElement('a');
-      a.href = encodedUri;
+      a.href = blobUrl;
       a.download = `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
