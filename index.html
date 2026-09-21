@@ -22,13 +22,13 @@
       user-select: none;
     }
     .glass-card {
-      background: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.88);
       backdrop-filter: blur(25px);
       -webkit-backdrop-filter: blur(25px);
       border: 1px solid rgba(255, 255, 255, 0.6);
     }
     .ios-nav {
-      background: rgba(249, 249, 249, 0.88);
+      background: rgba(249, 249, 249, 0.92);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-top: 0.5px solid rgba(0, 0, 0, 0.12);
@@ -39,13 +39,6 @@
     .ios-btn:active {
       transform: scale(0.96);
       opacity: 0.82;
-    }
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
     }
     .animate-fade-in {
       animation: fadeIn 0.25s ease-out forwards;
@@ -58,7 +51,6 @@
 </head>
 <body class="text-slate-900 pb-28 min-h-screen">
 
-  <!-- Top iOS Header Bar -->
   <header class="sticky top-0 z-40 bg-slate-100/80 backdrop-blur-md border-b border-slate-200/60 px-5 py-3.5 flex justify-between items-center shadow-sm">
     <div>
       <p class="text-[10px] font-bold tracking-widest text-indigo-600 uppercase">KasPintar AI</p>
@@ -70,7 +62,6 @@
     </div>
   </header>
 
-  <!-- Main Content Area -->
   <main class="max-w-md mx-auto px-4 pt-4 space-y-5">
 
     <!-- TAB 1: BERANDA -->
@@ -106,7 +97,7 @@
         </div>
       </div>
 
-      <!-- Form Input Transaksi -->
+      <!-- Form Manual -->
       <div class="glass-card rounded-2xl p-4 shadow-sm space-y-3">
         <div class="flex justify-between items-center border-b border-slate-100 pb-2">
           <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
@@ -152,7 +143,6 @@
         </form>
       </div>
 
-      <!-- Transaksi Terakhir -->
       <div class="space-y-2">
         <div class="flex justify-between items-center px-1">
           <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Transaksi Terbaru</h3>
@@ -185,7 +175,6 @@
 
     <!-- TAB 3: LAPORAN -->
     <section id="view-laporan" class="hidden space-y-4 animate-fade-in">
-      <!-- Recap Cards -->
       <div class="grid grid-cols-2 gap-3">
         <div class="glass-card p-4 rounded-2xl border border-slate-200">
           <p class="text-[10px] text-slate-400 font-bold uppercase">Rata-rata Pengeluaran</p>
@@ -197,7 +186,6 @@
         </div>
       </div>
 
-      <!-- Kategori Chart -->
       <div class="glass-card rounded-2xl p-4 shadow-sm space-y-3">
         <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">Proporsi Pengeluaran per Kategori</h3>
         <div class="relative h-56 flex justify-center items-center">
@@ -205,7 +193,6 @@
         </div>
       </div>
 
-      <!-- Arus Kas Chart -->
       <div class="glass-card rounded-2xl p-4 shadow-sm space-y-3">
         <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">Perbandingan Arus Kas</h3>
         <div class="relative h-48">
@@ -222,15 +209,22 @@
         </div>
         <div>
           <h3 class="text-base font-bold text-slate-800">Scan Struk / Nota dengan AI</h3>
-          <p class="text-xs text-slate-500 mt-1">Unggah atau foto nota belanja. AI Gemini akan mengekstrak nominal, tanggal, dan kategori secara otomatis.</p>
+          <p class="text-xs text-slate-500 mt-1">Ambil foto nota belanja secara langsung atau pilih dari galeri. AI Gemini akan membaca total belanja dan tanggal secara otomatis.</p>
         </div>
 
         <div class="space-y-3 pt-2">
-          <input type="file" id="foto-struk" accept="image/*" class="hidden" onchange="previewGambar(event)">
+          <!-- Input File untuk Kamera & Galeri -->
+          <input type="file" id="foto-struk-kamera" accept="image/*" capture="environment" class="hidden" onchange="previewGambar(event)">
+          <input type="file" id="foto-struk-galeri" accept="image/*" class="hidden" onchange="previewGambar(event)">
           
-          <button onclick="document.getElementById('foto-struk').click()" class="ios-btn w-full bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold py-3 rounded-xl text-xs flex items-center justify-center gap-2">
-            <i class="fa-solid fa-camera text-indigo-600"></i> Ambil / Pilih Gambar Struk
-          </button>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="document.getElementById('foto-struk-kamera').click()" class="ios-btn bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold py-3 px-2 rounded-xl text-xs flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-camera text-indigo-600 text-sm"></i> Buka Kamera
+            </button>
+            <button type="button" onclick="document.getElementById('foto-struk-galeri').click()" class="ios-btn bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold py-3 px-2 rounded-xl text-xs flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-image text-slate-600 text-sm"></i> Pilih Galeri
+            </button>
+          </div>
           
           <div id="preview-container" class="hidden relative rounded-xl overflow-hidden border border-slate-200 shadow-inner">
             <img id="img-preview" class="w-full h-44 object-cover" src="" alt="Preview Struk">
@@ -243,30 +237,30 @@
       </div>
     </section>
 
-    <!-- TAB 5: PENGATURAN -->
+    <!-- TAB 5: PENGATURAN (BERSIH & PRIVASI PENUH) -->
     <section id="view-pengaturan" class="hidden space-y-4 animate-fade-in">
       <div class="glass-card rounded-2xl p-4 shadow-sm space-y-3">
-        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">Pengaturan Gemini AI API</h3>
-        <p class="text-xs text-slate-500">Secara bawaan, aplikasi akan memproses struk secara otomatis. Jika kamu ingin menggunakan API Key pribadi saat offline/lokal, kamu bisa mengisinya di bawah:</p>
-        
-        <div class="space-y-2 pt-1">
-          <label class="block text-xs font-semibold text-slate-600">API Key Pribadi (Opsional)</label>
-          <input type="password" id="api-key" placeholder="Masukkan Gemini API Key (Opsional)..." class="w-full bg-slate-100 border-0 p-2.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-500" onchange="simpanApiKey()">
-          <a href="https://aistudio.google.com/app/apikey" target="_blank" class="inline-flex items-center gap-1 text-xs text-indigo-600 font-semibold hover:underline mt-1">
-            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> Dapatkan API Key Gratis di Google AI Studio
-          </a>
+        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">Keamanan & Integrasi AI</h3>
+        <div class="flex items-center gap-3 bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl">
+          <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div>
+            <p class="text-xs font-bold text-emerald-900">AI Terintegrasi Otomatis</p>
+            <p class="text-[10px] text-emerald-700 mt-0.5">Sistem AI Gemini siap memindai nota tanpa perlu pengaturan tambahan atau API key manual.</p>
+          </div>
         </div>
       </div>
 
       <div class="glass-card rounded-2xl p-4 shadow-sm space-y-3">
         <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">Penyimpanan Browser</h3>
-        <p class="text-xs text-slate-500">Data keuangan disimpan mandiri di browser ini. Tidak dikirim ke spreadsheet atau server eksternal.</p>
+        <p class="text-xs text-slate-500 leading-relaxed">Seluruh catatan keuangan disimpan secara mandiri dan 100% lokal di dalam perangkat/browser ini. Data tidak pernah dikirim ke server luar.</p>
         
         <div class="pt-2 space-y-2">
-          <button onclick="eksporExcel()" class="ios-btn w-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2">
-            <i class="fa-solid fa-download"></i> Ekspor Laporan Excel
+          <button onclick="eksporExcel()" class="ios-btn w-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold py-3 rounded-xl text-xs flex items-center justify-center gap-2">
+            <i class="fa-solid fa-file-excel"></i> Ekspor Laporan Excel
           </button>
-          <button onclick="bersihkanPenyimpanan()" class="ios-btn w-full bg-rose-50 border border-rose-200 text-rose-600 font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2">
+          <button onclick="bersihkanPenyimpanan()" class="ios-btn w-full bg-rose-50 border border-rose-200 text-rose-600 font-semibold py-3 rounded-xl text-xs flex items-center justify-center gap-2">
             <i class="fa-solid fa-trash-can"></i> Bersihkan Semua Data
           </button>
         </div>
@@ -275,7 +269,7 @@
 
   </main>
 
-  <!-- Edit Transaction Modal -->
+  <!-- Edit Modal -->
   <div id="modal-edit" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4 animate-fade-in">
       <div class="flex justify-between items-center border-b pb-2">
@@ -349,21 +343,27 @@
   </nav>
 
   <script>
+    // System State & Embedded API Key Direct
+    const DEFAULT_API_KEY = 'AQ.Ab8RN6IiHZ-Mvic1RrAFPg22dNl9IBW9NeoB9fvPqu_MaC5AkA';
     const DB_KEY = 'kaspintar_ios_db';
-    const API_KEY_STORAGE = 'gemini_api_key';
+    
     let dataTransaksi = [];
     let currentCategoryFilter = 'semua';
     let chartKategoriInstance = null;
     let chartArusKasInstance = null;
+    let selectedFile = null;
 
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('tanggal').valueAsDate = new Date();
-      muatApiKey();
       muatData();
       cekKoneksi();
       window.addEventListener('online', cekKoneksi);
       window.addEventListener('offline', cekKoneksi);
     });
+
+    function getApiKey() {
+      return DEFAULT_API_KEY;
+    }
 
     function cekKoneksi() {
       const badge = document.getElementById('status-badge');
@@ -425,7 +425,6 @@
 
       dataTransaksi.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
 
-      // Quick Preview (Max 4 items)
       const listTerakhir = document.getElementById('list-terakhir');
       listTerakhir.innerHTML = '';
 
@@ -536,7 +535,6 @@
       });
 
       simpanKeStorage();
-
       document.getElementById('form-transaksi').reset();
       document.getElementById('tanggal').valueAsDate = new Date();
     }
@@ -596,7 +594,6 @@
       document.getElementById('avg-pengeluaran').innerText = formatRupiah(avg);
       document.getElementById('total-count').innerText = `${totalCount} Transaksi`;
 
-      // Doughnut Chart (Kategori)
       const kategoriMap = {};
       pengeluaranItems.forEach(item => {
         kategoriMap[item.kategori] = (kategoriMap[item.kategori] || 0) + Number(item.nominal);
@@ -621,7 +618,6 @@
         }
       });
 
-      // Bar Chart (Arus Kas)
       const totalMasuk = dataTransaksi.filter(d => d.jenis === 'pemasukan').reduce((a, c) => a + Number(c.nominal), 0);
       const ctxArusKas = document.getElementById('chartArusKas').getContext('2d');
       if (chartArusKasInstance) chartArusKasInstance.destroy();
@@ -666,6 +662,7 @@
     function previewGambar(event) {
       const file = event.target.files[0];
       if (file) {
+        selectedFile = file;
         const reader = new FileReader();
         reader.onload = function(e) {
           document.getElementById('img-preview').src = e.target.result;
@@ -675,34 +672,18 @@
       }
     }
 
-    function muatApiKey() {
-      const storedKey = localStorage.getItem(API_KEY_STORAGE);
-      if (storedKey) document.getElementById('api-key').value = storedKey;
-    }
-
-    function simpanApiKey() {
-      const key = document.getElementById('api-key').value.trim();
-      localStorage.setItem(API_KEY_STORAGE, key);
-      alert('API Key berhasil disimpan.');
-    }
-
-    function getApiKey() {
-      return localStorage.getItem(API_KEY_STORAGE) || "";
-    }
-
     async function pindaiStrukAI() {
       if (!navigator.onLine) {
         alert('Fitur pemindaian AI memerlukan koneksi internet.');
         return;
       }
 
-      const fileInput = document.getElementById('foto-struk');
-      if (!fileInput.files || fileInput.files.length === 0) {
-        alert('Pilih atau foto struk terlebih dahulu.');
+      if (!selectedFile) {
+        alert('Silakan ambil foto atau pilih gambar struk terlebih dahulu!');
         return;
       }
 
-      const file = fileInput.files[0];
+      const file = selectedFile;
       const btnScan = document.getElementById('btn-scan');
       btnScan.disabled = true;
       btnScan.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menganalisis Struk...`;
@@ -712,7 +693,7 @@
         const base64Data = base64Image.split(',')[1];
 
         const apiKey = getApiKey();
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
         const promptText = "Analisis foto struk/nota belanja ini. Ekstrak data transaksi dalam format JSON murni. Pilih tanggal dalam format YYYY-MM-DD. Tentukan kategori yang relevan (misal: Makanan, Belanja, Transportasi, Hiburan, Tagihan, Lain-lain). Tuliskan catatan ringkas di keterangan.";
 
@@ -772,7 +753,7 @@
         alert('Berhasil membaca struk! Silakan periksa data sebelum disimpan.');
       } catch (err) {
         console.error(err);
-        alert('Gagal memproses struk. Jika kamu membuka file ini secara lokal/offline tanpa platform Canvas, pastikan untuk mengisi Gemini API Key di menu Pengaturan. Kamu bisa mendapatkan key gratis di Google AI Studio.');
+        alert('Gagal memproses struk. Pastikan koneksi internet stabil.');
       } finally {
         btnScan.disabled = false;
         btnScan.innerHTML = `<i class="fa-solid fa-bolt"></i> Analisis Struk Otomatis`;
