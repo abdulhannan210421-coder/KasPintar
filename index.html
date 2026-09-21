@@ -477,11 +477,10 @@
       }
     }
 
-    // PENERIMA GAMBAR DARI KODULAR CAMERA1 (Diperbaiki agar langsung memproses file path)
+    // PENERIMA PATH GAMBAR DARI KODULAR CAMERA1 (DIOPTIMALKAN AMAN)
     function prosesGambarDariKodular(imagePath) {
       if (!imagePath) return;
       
-      // Jika path berupa file lokal dari Android, load ke Image object untuk diconvert ke Base64
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = function() {
@@ -506,9 +505,11 @@
         document.getElementById('preview-container').classList.remove('hidden');
         showToast('Foto struk berhasil dimuat!', 'success');
       };
+      
       img.onerror = function() {
         showToast('Gagal memuat gambar dari kamera.', 'error');
       };
+
       img.src = imagePath;
     }
 
@@ -968,7 +969,7 @@
       });
     }
 
-    // PERBAIKAN EKSPOR EXCEL & CSV (Menghilangkan error Can only download http/https urls di Kodular)
+    // PERBAIKAN TOTAL EKSPOR EXCEL (Menggunakan Web Share API / Blob aman tanpa error protokol)
     function eksporExcel() {
       if (dataTransaksi.length === 0) {
         showToast('Belum ada data transaksi untuk diekspor!', 'error');
@@ -986,22 +987,28 @@
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Keuangan");
       
-      // Gunakan Base64 Data URI berawalan https atau pemicu klik langsung
-      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'base64' });
-      const uri = "https://kaspintar.storage/download?file=" + encodeURIComponent(wbout); 
+      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       
-      // Berhubung ini dijalankan di WebView Kodular, gunakan Base64 standar yang langsung diproses DownloadManager tanpa error protokol
-      const fallbackUri = "data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64," + wbout;
-
-      // Berikan aksi unduh aman
-      const a = document.createElement('a');
-      a.href = fallbackUri;
-      a.download = `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.xlsx`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      if (navigator.canShare && navigator.canShare({ files: [new File([blob], "laporan.xlsx", { type: blob.type })] })) {
+        const file = new File([blob], `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.xlsx`, { type: blob.type });
+        navigator.share({
+          files: [file],
+          title: 'Laporan Keuangan KasPintar',
+          text: 'Berikut adalah laporan keuangan KasPintar Anda.'
+        }).catch(() => {});
+      } else {
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+      }
       
-      showToast('Laporan Excel berhasil diunduh!', 'success');
+      showToast('Laporan Excel berhasil diproses!', 'success');
     }
 
     function eksporCSV() {
@@ -1014,13 +1021,16 @@
         csvContent += `${t.tanggal},${t.jenis.toUpperCase()},"${t.kategori}","${t.keterangan || '-'}",${t.nominal}\n`;
       });
 
-      const encodedUri = encodeURI(csvContent);
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const blobUrl = URL.createObjectURL(blob);
+
       const a = document.createElement('a');
-      a.href = encodedUri;
+      a.href = blobUrl;
       a.download = `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
 
       showToast('Laporan CSV berhasil diunduh!', 'success');
     }
