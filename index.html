@@ -10,10 +10,12 @@
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js CDN untuk Grafik Laporan -->
+  <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- SheetJS CDN untuk Ekspor Laporan Excel -->
+  <!-- SheetJS CDN untuk Ekspor Excel -->
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <!-- Tesseract.js CDN untuk Offline Client-Side OCR Fallback -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   
@@ -56,7 +58,7 @@
 
   <header class="sticky top-0 z-40 bg-slate-100/80 backdrop-blur-md border-b border-slate-200/60 px-5 py-3.5 flex justify-between items-center shadow-sm">
     <div>
-      <p class="text-[10px] font-bold tracking-widest text-indigo-600 uppercase">KasPintar AI</p>
+      <p class="text-[10px] font-bold tracking-widest text-indigo-600 uppercase">KasPintar Dual-Engine</p>
       <h1 class="text-xl font-extrabold tracking-tight text-slate-900" id="header-title">Beranda</h1>
     </div>
     <div id="status-badge" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
@@ -105,7 +107,7 @@
           <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
             <i class="fa-solid fa-plus-circle text-indigo-600"></i> Catat Transaksi Baru
           </h3>
-          <span class="text-[11px] text-slate-400">Manual</span>
+          <span class="text-[11px] text-slate-400">Manual / Auto AI</span>
         </div>
 
         <form id="form-transaksi" onsubmit="tambahTransaksi(event)" class="space-y-3">
@@ -126,7 +128,7 @@
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-[10px] font-semibold text-slate-500 mb-1">Kategori</label>
-              <input type="text" id="kategori" placeholder="Makanan, Gaji, dll" required class="w-full bg-slate-100 border-0 p-2.5 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500">
+              <input type="text" id="kategori" placeholder="Makanan, Transfer, Belanja" required class="w-full bg-slate-100 border-0 p-2.5 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500">
             </div>
             <div>
               <label class="block text-[10px] font-semibold text-slate-500 mb-1">Tanggal</label>
@@ -136,7 +138,7 @@
 
           <div>
             <label class="block text-[10px] font-semibold text-slate-500 mb-1">Catatan Tambahan</label>
-            <input type="text" id="keterangan" placeholder="Contoh: Beli makan siang warteg" class="w-full bg-slate-100 border-0 p-2.5 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500">
+            <input type="text" id="keterangan" placeholder="Contoh: Transfer Samsul Arifin / Indomaret" class="w-full bg-slate-100 border-0 p-2.5 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500">
           </div>
 
           <button type="submit" class="ios-btn w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl text-xs shadow-md shadow-indigo-200">
@@ -207,26 +209,28 @@
           <i class="fa-solid fa-wand-magic-sparkles"></i>
         </div>
         <div>
-          <h3 class="text-base font-bold text-slate-800">Scan Struk / Nota dengan AI</h3>
-          <p class="text-xs text-slate-500 mt-1">Foto nota belanja secara langsung dari kamera HP atau pilih dari galeri. AI Gemini akan mengekstrak total nominal dan tanggal secara otomatis.</p>
+          <h3 class="text-base font-bold text-slate-800">Scan Struk / Bukti Transfer</h3>
+          <p class="text-xs text-slate-500 mt-1">Sistem Dual-Engine (AI Cloud + Client-Side OCR Offline) siap membaca nota/transfer tanpa kendala.</p>
         </div>
 
         <div class="space-y-3 pt-2">
-          <!-- Hidden Input 1: Kamera HP Native (capture="environment") -->
-          <input type="file" id="foto-struk-kamera" accept="image/*" capture="environment" class="hidden" onchange="prosesInputGambar(event)">
-          
-          <!-- Hidden Input 2: Pilih Gambar Galeri HP -->
-          <input type="file" id="foto-struk-galeri" accept="image/*" class="hidden" onchange="prosesInputGambar(event)">
+          <!-- Hidden Input Files -->
+          <input type="file" id="foto-struk-kamera" accept="image/*" capture="environment" class="hidden" onchange="previewGambar(event)">
+          <input type="file" id="foto-struk-galeri" accept="image/*" class="hidden" onchange="previewGambar(event)">
 
           <div class="grid grid-cols-2 gap-2">
-            <button type="button" onclick="document.getElementById('foto-struk-kamera').click()" class="ios-btn bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-indigo-200">
-              <i class="fa-solid fa-camera text-sm"></i> Buka Kamera
+            <button type="button" onclick="bukaKameraLiveModal()" class="ios-btn bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-indigo-200">
+              <i class="fa-solid fa-video text-sm"></i> Kamera Live
             </button>
             <button type="button" onclick="document.getElementById('foto-struk-galeri').click()" class="ios-btn bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold py-3 px-2 rounded-xl text-xs flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-image text-slate-600 text-sm"></i> Pilih Galeri
             </button>
           </div>
           
+          <button type="button" onclick="document.getElementById('foto-struk-kamera').click()" class="text-xs text-indigo-600 font-medium underline block mx-auto">
+            Atau gunakan kamera native HP
+          </button>
+
           <div id="preview-container" class="hidden relative rounded-xl overflow-hidden border border-slate-200 shadow-inner">
             <img id="img-preview" class="w-full h-48 object-cover" src="" alt="Preview Struk">
           </div>
@@ -234,33 +238,38 @@
           <button onclick="pindaiStrukAI()" id="btn-scan" class="ios-btn w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl text-xs shadow-md shadow-indigo-200 flex items-center justify-center gap-2">
             <i class="fa-solid fa-bolt"></i> Analisis Struk Otomatis
           </button>
+          
+          <p id="engine-status-text" class="text-[11px] text-slate-400 font-medium">Status: Mesin AI Cloud & Offline OCR Siap</p>
         </div>
       </div>
     </section>
 
     <section id="view-pengaturan" class="hidden space-y-4 animate-fade-in">
       <div class="glass-card rounded-2xl p-4 shadow-sm space-y-3">
-        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">Status Sistem & Integrasi</h3>
-        <div class="flex items-center gap-3 bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl">
-          <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
-            <i class="fa-solid fa-shield-halved"></i>
+        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">Mesin Pemindai Struk</h3>
+        <div class="flex items-center gap-3 bg-indigo-50 border border-indigo-100 p-3.5 rounded-xl">
+          <div class="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+            <i class="fa-solid fa-layer-group"></i>
           </div>
           <div>
-            <p class="text-xs font-bold text-emerald-900">Integrasi AI Aktif</p>
-            <p class="text-[10px] text-emerald-700 mt-0.5">Gemini AI Vision terintegrasi secara otomatis tanpa perlu konfigurasi manual dari pengguna.</p>
+            <p class="text-xs font-bold text-indigo-900">Dual-Engine Active</p>
+            <p class="text-[10px] text-indigo-700 mt-0.5">Otomatis beralih ke Tesseract OCR jika AI Cloud tidak dapat diakses.</p>
           </div>
         </div>
       </div>
 
       <div class="glass-card rounded-2xl p-4 shadow-sm space-y-3">
         <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">Penyimpanan Browser</h3>
-        <p class="text-xs text-slate-500 leading-relaxed">Seluruh catatan keuangan kamu disimpan mandiri dan 100% lokal di dalam perangkat/browser ini (localStorage). Data tidak pernah dikirim ke server luar.</p>
+        <p class="text-xs text-slate-500 leading-relaxed">Seluruh catatan disimpan 100% lokal di browser ini. Tidak ada server eksternal yang menyimpan data kamu.</p>
         
         <div class="pt-2 space-y-2">
           <button onclick="eksporExcel()" class="ios-btn w-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold py-3 rounded-xl text-xs flex items-center justify-center gap-2">
-            <i class="fa-solid fa-file-excel"></i> Ekspor Laporan Excel
+            <i class="fa-solid fa-file-excel"></i> Ekspor Laporan Excel (.xlsx)
           </button>
-          <button onclick="bersihkanPenyimpanan()" class="ios-btn w-full bg-rose-50 border border-rose-200 text-rose-600 font-semibold py-3 rounded-xl text-xs flex items-center justify-center gap-2">
+          <button onclick="eksporCSV()" class="ios-btn w-full bg-slate-100 border border-slate-200 text-slate-700 font-semibold py-3 rounded-xl text-xs flex items-center justify-center gap-2">
+            <i class="fa-solid fa-file-csv"></i> Ekspor Laporan CSV
+          </button>
+          <button onclick="bukaModalKonfirmasiHapus()" class="ios-btn w-full bg-rose-50 border border-rose-200 text-rose-600 font-semibold py-3 rounded-xl text-xs flex items-center justify-center gap-2">
             <i class="fa-solid fa-trash-can"></i> Bersihkan Semua Data
           </button>
         </div>
@@ -269,7 +278,26 @@
 
   </main>
 
-  <!-- Edit Modal -->
+  <div id="camera-modal" class="fixed inset-0 z-50 bg-black/90 hidden flex flex-col items-center justify-center p-4">
+    <div class="w-full max-w-sm bg-slate-900 rounded-3xl overflow-hidden shadow-2xl relative flex flex-col items-center">
+      <div class="w-full p-3 bg-slate-800 text-white flex justify-between items-center px-4">
+        <span class="text-xs font-bold"><i class="fa-solid fa-camera mr-2 text-indigo-400"></i> Kamera Live</span>
+        <button onclick="tutupKameraLiveModal()" class="text-slate-400 hover:text-white p-1">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+      <div class="relative w-full h-72 bg-black flex items-center justify-center">
+        <video id="video-stream" autoplay playsinline class="w-full h-full object-cover"></video>
+        <div class="absolute inset-4 border-2 border-dashed border-indigo-400/60 rounded-xl pointer-events-none"></div>
+      </div>
+      <div class="p-4 w-full bg-slate-900 flex justify-center">
+        <button onclick="jepretFotoKamera()" class="ios-btn bg-white text-indigo-600 font-bold px-6 py-3 rounded-full text-xs shadow-xl flex items-center gap-2">
+          <i class="fa-solid fa-circle text-rose-500 text-sm"></i> Jepret Struk
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div id="modal-edit" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="glass-card w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4 animate-fade-in">
       <div class="flex justify-between items-center border-b pb-2">
@@ -314,7 +342,28 @@
     </div>
   </div>
 
-  <!-- Bottom iOS Navigation Bar -->
+  <div id="modal-confirm" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-xs rounded-3xl p-5 shadow-2xl space-y-4 text-center animate-fade-in">
+      <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto text-xl">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div>
+        <h3 id="confirm-title" class="text-sm font-bold text-slate-800">Konfirmasi</h3>
+        <p id="confirm-msg" class="text-xs text-slate-500 mt-1">Apakah kamu yakin?</p>
+      </div>
+      <div class="grid grid-cols-2 gap-2 pt-2">
+        <button onclick="tutupModalConfirm()" class="ios-btn bg-slate-100 text-slate-700 py-2.5 rounded-xl text-xs font-semibold">
+          Batal
+        </button>
+        <button id="btn-confirm-action" class="ios-btn bg-rose-600 text-white py-2.5 rounded-xl text-xs font-semibold shadow-md shadow-rose-200">
+          Hapus
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 space-y-2 w-full max-w-xs pointer-events-none px-4"></div>
+
   <nav class="fixed bottom-0 left-0 right-0 z-40 ios-nav px-4 py-2 shadow-lg">
     <div class="max-w-md mx-auto flex justify-around items-center">
       <button onclick="switchTab('beranda')" id="tab-beranda" class="tab-btn flex flex-col items-center gap-1 text-indigo-600">
@@ -352,6 +401,8 @@
     let chartKategoriInstance = null;
     let chartArusKasInstance = null;
     let selectedImageBase64 = null;
+    let mediaStreamTrack = null;
+    let confirmCallback = null;
 
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('tanggal').valueAsDate = new Date();
@@ -381,7 +432,40 @@
       }
     }
 
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      const bgColors = {
+        success: 'bg-emerald-600 text-white',
+        error: 'bg-rose-600 text-white',
+        info: 'bg-slate-900 text-white'
+      };
+      
+      const icons = {
+        success: 'fa-circle-check',
+        error: 'fa-circle-exclamation',
+        info: 'fa-circle-info'
+      };
+
+      toast.className = `glass-card ${bgColors[type] || bgColors.info} p-3 rounded-2xl shadow-xl text-xs font-semibold flex items-center gap-2 transition-all duration-300 transform translate-y-[-10px] opacity-0 pointer-events-auto`;
+      toast.innerHTML = `<i class="fa-solid ${icons[type] || icons.info} text-sm"></i> <span>${message}</span>`;
+      
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-[-10px]', 'opacity-0');
+      }, 10);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-[-10px]');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
     function switchTab(tabName) {
+      tutupKameraLiveModal();
+
       ['beranda', 'transaksi', 'laporan', 'scan', 'pengaturan'].forEach(v => {
         document.getElementById(`view-${v}`).classList.add('hidden');
         const tabEl = document.getElementById(`tab-${v}`);
@@ -412,87 +496,131 @@
       }
     }
 
-    function prosesInputGambar(event) {
+    async function bukaKameraLiveModal() {
+      const modal = document.getElementById('camera-modal');
+      const video = document.getElementById('video-stream');
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false
+        });
+        mediaStreamTrack = stream;
+        video.srcObject = stream;
+        modal.classList.remove('hidden');
+      } catch (err) {
+        console.warn("Live WebRTC Camera error/blocked. Beralih ke kamera native:", err);
+        showToast('Kamera Live tidak didukung. Membuka kamera HP...', 'info');
+        document.getElementById('foto-struk-kamera').click();
+      }
+    }
+
+    function tutupKameraLiveModal() {
+      const modal = document.getElementById('camera-modal');
+      if (mediaStreamTrack) {
+        mediaStreamTrack.getTracks().forEach(track => track.stop());
+        mediaStreamTrack = null;
+      }
+      modal.classList.add('hidden');
+    }
+
+    function jepretFotoKamera() {
+      const video = document.getElementById('video-stream');
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      kompresDanSimpanImage(canvas.toDataURL('image/jpeg', 0.85));
+      tutupKameraLiveModal();
+      showToast('Foto struk berhasil diambil!', 'success');
+    }
+
+    function previewGambar(event) {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
 
       const reader = new FileReader();
       reader.onload = function(e) {
-        const img = new Image();
-        img.onload = function() {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          
-          // Batasi ukuran maksimal gambar ke 800px untuk kompresi payload super cepat
-          const MAX_SIZE = 800;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > height) {
-            if (width > MAX_SIZE) {
-              height = Math.round(height * (MAX_SIZE / width));
-              width = MAX_SIZE;
-            }
-          } else {
-            if (height > MAX_SIZE) {
-              width = Math.round(width * (MAX_SIZE / height));
-              height = MAX_SIZE;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // Kompresi kualitas JPEG 70%
-          selectedImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
-          document.getElementById('img-preview').src = selectedImageBase64;
-          document.getElementById('preview-container').classList.remove('hidden');
-        };
-        img.src = e.target.result;
+        kompresDanSimpanImage(e.target.result);
       };
       reader.readAsDataURL(file);
     }
 
-    async function pindaiStrukAI() {
-      if (!navigator.onLine) {
-        alert('Fitur pemindaian AI memerlukan koneksi internet aktif.');
-        return;
-      }
+    function kompresDanSimpanImage(dataUri) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
 
+        const MAX_SIZE = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height = Math.round(height * (MAX_SIZE / width));
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width = Math.round(width * (MAX_SIZE / height));
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        selectedImageBase64 = canvas.toDataURL('image/jpeg', 0.75);
+        document.getElementById('img-preview').src = selectedImageBase64;
+        document.getElementById('preview-container').classList.remove('hidden');
+      };
+      img.src = dataUri;
+    }
+
+    async function pindaiStrukAI() {
       if (!selectedImageBase64) {
-        alert('Silakan ambil foto dari kamera atau pilih foto dari galeri terlebih dahulu!');
+        showToast('Ambil foto kamera atau pilih gambar galeri terlebih dahulu!', 'error');
         return;
       }
 
       const btnScan = document.getElementById('btn-scan');
+      const statusText = document.getElementById('engine-status-text');
+      
       btnScan.disabled = true;
       btnScan.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menganalisis Struk...`;
+      statusText.innerText = "Status: Mencoba Gemini AI Cloud...";
 
+      let dataHasil = null;
+
+      // Engine 1: Gemini AI Cloud
       try {
-        const base64Data = selectedImageBase64.split(',')[1];
-        const apiKey = getApiKey();
-        
-        if (!apiKey) {
-          throw new Error("API Key tidak dikonfigurasi.");
-        }
+        if (!navigator.onLine) throw new Error("Offline Mode");
 
+        const apiKey = getApiKey();
+        if (!apiKey) throw new Error("No API Key");
+
+        const base64Data = selectedImageBase64.split(',')[1];
+        
+        // Coba model gemini-1.5-flash
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-        const promptText = "Analisis foto nota/struk belanja ini. Kembalikan data transaksi dalam JSON murni tanpa markdown dengan field: total (number angka murni), kategori (string singkat), keterangan (string singkat), tanggal (string format YYYY-MM-DD).";
+        const promptText = "Analisis foto nota/struk/bukti transfer ini. Kembalikan data JSON murni dengan field: total (number angka murni tanpa titik), kategori (string singkat), keterangan (string singkat misal nama penerima/merchant), tanggal (string YYYY-MM-DD).";
 
         const payload = {
           contents: [{
             parts: [
               { text: promptText },
-              {
-                inline_data: {
-                  mime_type: "image/jpeg",
-                  data: base64Data
-                }
-              }
+              { inlineData: { mimeType: "image/jpeg", data: base64Data } }
             ]
-          }]
+          }],
+          generationConfig: {
+            responseMimeType: "application/json"
+          }
         };
 
         const response = await fetch(apiUrl, {
@@ -501,36 +629,128 @@
           body: JSON.stringify(payload)
         });
 
-        if (!response.ok) {
-          const errBody = await response.text();
-          console.error("Gemini API Error details:", response.status, errBody);
-          throw new Error(`API Error HTTP ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const resData = await response.json();
         const rawText = resData.candidates?.[0]?.content?.parts?.[0]?.text;
         
-        if (!rawText) throw new Error("Format respons tidak memuat teks hasil.");
-
-        // Bersihkan pembungkus markdown JSON (```json ... ```)
-        const cleanJsonText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-        const hasil = JSON.parse(cleanJsonText);
-
-        switchTab('beranda');
-        if (hasil.total) document.getElementById('nominal').value = Number(hasil.total);
-        if (hasil.kategori) document.getElementById('kategori').value = hasil.kategori;
-        if (hasil.keterangan) document.getElementById('keterangan').value = hasil.keterangan;
-        if (hasil.tanggal) document.getElementById('tanggal').value = hasil.tanggal;
-        document.getElementById('jenis').value = 'pengeluaran';
-
-        alert('Berhasil membaca struk! Silakan periksa formulir di Beranda sebelum menyimpan.');
+        if (rawText) {
+          const cleanText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+          dataHasil = JSON.parse(cleanText);
+          showToast('Berhasil dibaca oleh Gemini AI Cloud!', 'success');
+        }
       } catch (err) {
-        console.error("Scan Struk Error:", err);
-        alert('Gagal membaca nota secara otomatis. Kamu dapat mengisikan data secara manual pada halaman Beranda.');
-      } finally {
-        btnScan.disabled = false;
-        btnScan.innerHTML = `<i class="fa-solid fa-bolt"></i> Analisis Struk Otomatis`;
+        console.warn("Engine AI Cloud gagal/offline. Peralihan ke Engine 2 (Tesseract OCR Client-Side)...", err);
       }
+
+      // Engine 2: Tesseract.js Offline Client-Side OCR Fallback
+      if (!dataHasil) {
+        statusText.innerText = "Status: Menjalankan Offline Client-Side OCR...";
+        try {
+          dataHasil = await prosesOCRClientSide(selectedImageBase64);
+          showToast('Berhasil dibaca oleh Mesin Offline OCR!', 'success');
+        } catch (ocrErr) {
+          console.error("Engine OCR Fallback Error:", ocrErr);
+        }
+      }
+
+      // Terapkan Hasil ke Form Beranda
+      if (dataHasil && (dataHasil.total || dataHasil.kategori || dataHasil.keterangan)) {
+        switchTab('beranda');
+        if (dataHasil.total) document.getElementById('nominal').value = Number(dataHasil.total);
+        if (dataHasil.kategori) document.getElementById('kategori').value = dataHasil.kategori;
+        if (dataHasil.keterangan) document.getElementById('keterangan').value = dataHasil.keterangan;
+        if (dataHasil.tanggal) document.getElementById('tanggal').value = dataHasil.tanggal;
+        document.getElementById('jenis').value = 'pengeluaran';
+        statusText.innerText = "Status: Berhasil Membaca Struk";
+      } else {
+        showToast('Gagal membaca nota otomatis. Silakan isi data secara manual.', 'error');
+        statusText.innerText = "Status: Memerlukan Isian Manual";
+      }
+
+      btnScan.disabled = false;
+      btnScan.innerHTML = `<i class="fa-solid fa-bolt"></i> Analisis Struk Otomatis`;
+    }
+
+    async function prosesOCRClientSide(base64Image) {
+      if (typeof Tesseract === 'undefined') {
+        throw new Error("Tesseract CDN Not Loaded");
+      }
+
+      const worker = await Tesseract.createWorker('eng');
+      const ret = await worker.recognize(base64Image);
+      await worker.terminate();
+
+      const rawText = ret.data.text;
+      console.log("Raw OCR Text:", rawText);
+
+      return parseIndonesianReceiptText(rawText);
+    }
+
+    function parseIndonesianReceiptText(text) {
+      let total = 0;
+      let kategori = "Pengeluaran";
+      let keterangan = "Struk / Transfer";
+      let tanggal = new Date().toISOString().split('T')[0];
+
+      // Clean lines
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+      // 1. Cari Nominal Rp
+      const amountRegexes = [
+        /Nominal\s*[:\s]*Rp?\s*([\d\.,]+)/i,
+        /Total\s*[:\s]*Rp?\s*([\d\.,]+)/i,
+        /Rp\s*([\d\.,]+)/i,
+        /Jumlah\s*[:\s]*Rp?\s*([\d\.,]+)/i,
+        /(\d{1,3}(?:\.\d{3})+)/
+      ];
+
+      for (let reg of amountRegexes) {
+        const match = text.match(reg);
+        if (match && match[1]) {
+          let numStr = match[1].replace(/\D/g, '');
+          let val = parseInt(numStr, 10);
+          if (val >= 1000 && val <= 100000000) {
+            total = val;
+            break;
+          }
+        }
+      }
+
+      // 2. Cari Nama Penerima / Merchant
+      const recipientMatch = text.match(/(?:Nama Penerima|Penerima|Transfer ke|Merchant|Toko)\s*[:\s]*([A-Za-z0-9\s]{3,25})/i);
+      if (recipientMatch && recipientMatch[1]) {
+        keterangan = recipientMatch[1].trim();
+      } else {
+        // Ambil nama dari baris atas
+        for (let l of lines.slice(0, 5)) {
+          if (l.length > 3 && !l.toLowerCase().includes('berhasil') && !l.toLowerCase().includes('nominal') && !/\d/.test(l)) {
+            keterangan = l;
+            break;
+          }
+        }
+      }
+
+      // 3. Tentukan Kategori Berdasarkan Keyword
+      const textLower = text.toLowerCase();
+      if (textLower.includes('transfer') || textLower.includes('nominal') || textLower.includes('biaya') || textLower.includes('penerima') || textLower.includes('bank')) {
+        kategori = "Transfer / Tagihan";
+      } else if (textLower.includes('makan') || textLower.includes('resto') || textLower.includes('kopi') || textLower.includes('warung') || textLower.includes('cafe')) {
+        kategori = "Makanan & Minuman";
+      } else if (textLower.includes('indomaret') || textLower.includes('alfamart') || textLower.includes('supermarket') || textLower.includes('belanja')) {
+        kategori = "Belanja";
+      }
+
+      // 4. Tanggal
+      const dateMatch = text.match(/(\d{1,2})[\/\.-](\d{1,2})[\/\.-](\d{2,4})/);
+      if (dateMatch) {
+        let d = dateMatch[1].padStart(2, '0');
+        let m = dateMatch[2].padStart(2, '0');
+        let y = dateMatch[3].length === 2 ? '20' + dateMatch[3] : dateMatch[3];
+        tanggal = `${y}-${m}-${d}`;
+      }
+
+      return { total, kategori, keterangan, tanggal };
     }
 
     function muatData() {
@@ -595,7 +815,7 @@
           <button onclick="bukaModalEdit('${item.id}')" class="text-slate-300 hover:text-indigo-600 text-xs p-1">
             <i class="fa-solid fa-pen"></i>
           </button>
-          <button onclick="hapusTransaksi('${item.id}')" class="text-slate-300 hover:text-rose-500 text-xs p-1">
+          <button onclick="konfirmasiHapusSingle('${item.id}')" class="text-slate-300 hover:text-rose-500 text-xs p-1">
             <i class="fa-solid fa-trash-can"></i>
           </button>
         </div>
@@ -662,13 +882,34 @@
       simpanKeStorage();
       document.getElementById('form-transaksi').reset();
       document.getElementById('tanggal').valueAsDate = new Date();
+      showToast('Transaksi berhasil disimpan!', 'success');
     }
 
-    function hapusTransaksi(id) {
-      if (confirm('Hapus pencatatan transaksi ini?')) {
+    function konfirmasiHapusSingle(id) {
+      bukaModalConfirm('Hapus Transaksi', 'Apakah kamu yakin ingin menghapus pencatatan transaksi ini?', () => {
         dataTransaksi = dataTransaksi.filter(t => t.id !== id);
         simpanKeStorage();
-      }
+        showToast('Transaksi telah dihapus.', 'info');
+      });
+    }
+
+    function bukaModalConfirm(title, msg, onConfirm) {
+      document.getElementById('confirm-title').innerText = title;
+      document.getElementById('confirm-msg').innerText = msg;
+      confirmCallback = onConfirm;
+      
+      const btnConfirm = document.getElementById('btn-confirm-action');
+      btnConfirm.onclick = () => {
+        if (confirmCallback) confirmCallback();
+        tutupModalConfirm();
+      };
+
+      document.getElementById('modal-confirm').classList.remove('hidden');
+    }
+
+    function tutupModalConfirm() {
+      document.getElementById('modal-confirm').classList.add('hidden');
+      confirmCallback = null;
     }
 
     function bukaModalEdit(id) {
@@ -703,6 +944,7 @@
 
         simpanKeStorage();
         tutupModalEdit();
+        showToast('Perubahan transaksi disimpan!', 'success');
       }
     }
 
@@ -767,7 +1009,7 @@
 
     function eksporExcel() {
       if (dataTransaksi.length === 0) {
-        alert('Belum ada data transaksi untuk diekspor!');
+        showToast('Belum ada data transaksi untuk diekspor!', 'error');
         return;
       }
       const formattedData = dataTransaksi.map(item => ({
@@ -781,16 +1023,49 @@
       const worksheet = XLSX.utils.json_to_sheet(formattedData);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Keuangan");
-      XLSX.writeFile(workbook, `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.xlsx`);
+      
+      // Menggunakan Base64 Data URI agar kompatibel dengan Kodular WebViewer Download
+      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'base64' });
+      const uri = "data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64," + wbout;
+      
+      const a = document.createElement('a');
+      a.href = uri;
+      a.download = `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      showToast('Laporan Excel berhasil diunduh!', 'success');
     }
 
-    function bersihkanPenyimpanan() {
-      if (confirm('Apakah kamu yakin ingin menghapus SELURUH data keuangan di browser ini?')) {
+    function eksporCSV() {
+      if (dataTransaksi.length === 0) {
+        showToast('Belum ada data transaksi!', 'error');
+        return;
+      }
+      let csvContent = "data:text/csv;charset=utf-8,Tanggal,Jenis,Kategori,Catatan,Nominal\n";
+      dataTransaksi.forEach(t => {
+        csvContent += `${t.tanggal},${t.jenis.toUpperCase()},"${t.kategori}","${t.keterangan || '-'}",${t.nominal}\n`;
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const a = document.createElement('a');
+      a.href = encodedUri;
+      a.download = `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      showToast('Laporan CSV berhasil diunduh!', 'success');
+    }
+
+    function bukaModalKonfirmasiHapus() {
+      bukaModalConfirm('Bersihkan Semua Data', 'Tindakan ini akan menghapus SELURUH data keuangan lokal di perangkat ini. Lanjutkan?', () => {
         localStorage.removeItem(DB_KEY);
         dataTransaksi = [];
         perbaruiTampilan();
-        alert('Seluruh data berhasil dibersihkan.');
-      }
+        showToast('Seluruh data berhasil dibersihkan.', 'info');
+      });
     }
   </script>
 </body>
