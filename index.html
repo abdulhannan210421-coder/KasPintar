@@ -468,20 +468,48 @@
       }
     }
 
-    // Fungsi pemanggil kamera native Kodular
+    // Panggil kamera native Kodular
     function panggilKameraKodular() {
       if (window.AppInventor) {
         window.AppInventor.setWebViewString('TAKE_PHOTO');
       } else {
-        // Fallback jika dibuka di browser biasa komputer
         document.getElementById('foto-struk-kamera').click();
       }
     }
 
-    // Fungsi penerima hasil foto dari Kodular Camera1
+    // PENERIMA GAMBAR DARI KODULAR CAMERA1 (Diperbaiki agar langsung memproses file path)
     function prosesGambarDariKodular(imagePath) {
-      kompresDanSimpanImage(imagePath);
-      showToast('Foto berhasil diambil dari kamera HP!', 'success');
+      if (!imagePath) return;
+      
+      // Jika path berupa file lokal dari Android, load ke Image object untuk diconvert ke Base64
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const MAX_SIZE = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) { height = Math.round(height * (MAX_SIZE / width)); width = MAX_SIZE; }
+        } else {
+          if (height > MAX_SIZE) { width = Math.round(width * (MAX_SIZE / height)); height = MAX_SIZE; }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        selectedImageBase64 = canvas.toDataURL('image/jpeg', 0.75);
+        document.getElementById('img-preview').src = selectedImageBase64;
+        document.getElementById('preview-container').classList.remove('hidden');
+        showToast('Foto struk berhasil dimuat!', 'success');
+      };
+      img.onerror = function() {
+        showToast('Gagal memuat gambar dari kamera.', 'error');
+      };
+      img.src = imagePath;
     }
 
     function previewGambar(event) {
@@ -940,7 +968,7 @@
       });
     }
 
-    // Perbaikan Unduhan Excel menggunakan Blob URL (Menghilangkan error http/https urls)
+    // PERBAIKAN EKSPOR EXCEL & CSV (Menghilangkan error Can only download http/https urls di Kodular)
     function eksporExcel() {
       if (dataTransaksi.length === 0) {
         showToast('Belum ada data transaksi untuk diekspor!', 'error');
@@ -958,12 +986,16 @@
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Keuangan");
       
-      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const blobUrl = URL.createObjectURL(blob);
+      // Gunakan Base64 Data URI berawalan https atau pemicu klik langsung
+      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'base64' });
+      const uri = "https://kaspintar.storage/download?file=" + encodeURIComponent(wbout); 
       
+      // Berhubung ini dijalankan di WebView Kodular, gunakan Base64 standar yang langsung diproses DownloadManager tanpa error protokol
+      const fallbackUri = "data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64," + wbout;
+
+      // Berikan aksi unduh aman
       const a = document.createElement('a');
-      a.href = blobUrl;
+      a.href = fallbackUri;
       a.download = `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.xlsx`;
       document.body.appendChild(a);
       a.click();
@@ -982,11 +1014,9 @@
         csvContent += `${t.tanggal},${t.jenis.toUpperCase()},"${t.kategori}","${t.keterangan || '-'}",${t.nominal}\n`;
       });
 
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const blobUrl = URL.createObjectURL(blob);
-
+      const encodedUri = encodeURI(csvContent);
       const a = document.createElement('a');
-      a.href = blobUrl;
+      a.href = encodedUri;
       a.download = `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a);
       a.click();
