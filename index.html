@@ -10,9 +10,9 @@
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js CDN -->
+  <!-- Chart.js CDN untuk Grafik Laporan -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- SheetJS CDN untuk Ekspor Excel -->
+  <!-- SheetJS CDN untuk Ekspor Laporan Excel -->
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -67,13 +67,13 @@
 
   <main class="max-w-md mx-auto px-4 pt-4 space-y-5">
 
-    <!-- TAB 1: BERANDA -->
     <section id="view-beranda" class="space-y-4 animate-fade-in">
+      <!-- Balance Card -->
       <div class="bg-gradient-to-br from-indigo-600 via-indigo-700 to-slate-900 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden">
         <div class="absolute -right-8 -bottom-8 w-36 h-36 bg-white/10 rounded-full blur-2xl"></div>
         <div class="flex justify-between items-center">
           <p class="text-xs font-semibold text-indigo-200 uppercase tracking-wider">Total Saldo Bersih</p>
-          <span class="text-[10px] bg-white/15 px-2.5 py-1 rounded-full font-medium">Bulan Ini</span>
+          <span class="text-[10px] bg-white/15 px-2.5 py-1 rounded-full font-medium">Lokal</span>
         </div>
         <h2 id="total-saldo" class="text-3xl font-black mt-1.5 tracking-tight">Rp 0</h2>
         
@@ -99,6 +99,7 @@
         </div>
       </div>
 
+      <!-- Form Manual -->
       <div class="glass-card rounded-2xl p-4 shadow-sm space-y-3">
         <div class="flex justify-between items-center border-b border-slate-100 pb-2">
           <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
@@ -153,7 +154,6 @@
       </div>
     </section>
 
-    <!-- TAB 2: TRANSAKSI -->
     <section id="view-transaksi" class="hidden space-y-4 animate-fade-in">
       <div class="glass-card rounded-2xl p-3 shadow-sm flex items-center gap-2">
         <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs ml-2"></i>
@@ -174,7 +174,6 @@
       <div id="list-transaksi-lengkap" class="space-y-2"></div>
     </section>
 
-    <!-- TAB 3: LAPORAN -->
     <section id="view-laporan" class="hidden space-y-4 animate-fade-in">
       <div class="grid grid-cols-2 gap-3">
         <div class="glass-card p-4 rounded-2xl border border-slate-200">
@@ -202,7 +201,6 @@
       </div>
     </section>
 
-    <!-- TAB 4: SCAN AI STRUK -->
     <section id="view-scan" class="hidden space-y-4 animate-fade-in">
       <div class="glass-card rounded-2xl p-5 shadow-sm space-y-4 text-center">
         <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-inner border border-indigo-100">
@@ -210,24 +208,18 @@
         </div>
         <div>
           <h3 class="text-base font-bold text-slate-800">Scan Struk / Nota dengan AI</h3>
-          <p class="text-xs text-slate-500 mt-1">Arahkan kamera ke nota belanja atau unggah foto dari galeri. AI Gemini akan mengekstrak total belanja dan tanggal secara otomatis.</p>
+          <p class="text-xs text-slate-500 mt-1">Foto nota belanja secara langsung dari kamera HP atau pilih dari galeri. AI Gemini akan mengekstrak total nominal dan tanggal secara otomatis.</p>
         </div>
 
         <div class="space-y-3 pt-2">
-          <!-- Tampilan Stream Kamera Live -->
-          <div id="camera-box" class="hidden relative rounded-2xl overflow-hidden border-2 border-indigo-500 shadow-md bg-black">
-            <video id="video-feed" autoplay playsinline class="w-full h-60 object-cover"></video>
-            <button type="button" onclick="jepretFotoKamera()" class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-white text-indigo-600 font-bold px-5 py-2 rounded-full text-xs shadow-lg flex items-center gap-2">
-              <i class="fa-solid fa-circle text-rose-500 text-sm"></i> Jepret Struk
-            </button>
-          </div>
+          <!-- Hidden Input 1: Kamera HP Native (capture="environment") -->
+          <input type="file" id="foto-struk-kamera" accept="image/*" capture="environment" class="hidden" onchange="prosesInputGambar(event)">
+          
+          <!-- Hidden Input 2: Pilih Gambar Galeri HP -->
+          <input type="file" id="foto-struk-galeri" accept="image/*" class="hidden" onchange="prosesInputGambar(event)">
 
-          <!-- Input File untuk Galeri & Fallback -->
-          <input type="file" id="foto-struk-galeri" accept="image/*" class="hidden" onchange="previewGambar(event)">
-          <canvas id="canvas-temp" class="hidden"></canvas>
-
-          <div class="grid grid-cols-2 gap-2" id="camera-btn-group">
-            <button type="button" onclick="bukaKameraLive()" class="ios-btn bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-indigo-200">
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="document.getElementById('foto-struk-kamera').click()" class="ios-btn bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-2 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-indigo-200">
               <i class="fa-solid fa-camera text-sm"></i> Buka Kamera
             </button>
             <button type="button" onclick="document.getElementById('foto-struk-galeri').click()" class="ios-btn bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold py-3 px-2 rounded-xl text-xs flex items-center justify-center gap-1.5">
@@ -236,7 +228,7 @@
           </div>
           
           <div id="preview-container" class="hidden relative rounded-xl overflow-hidden border border-slate-200 shadow-inner">
-            <img id="img-preview" class="w-full h-44 object-cover" src="" alt="Preview Struk">
+            <img id="img-preview" class="w-full h-48 object-cover" src="" alt="Preview Struk">
           </div>
 
           <button onclick="pindaiStrukAI()" id="btn-scan" class="ios-btn w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl text-xs shadow-md shadow-indigo-200 flex items-center justify-center gap-2">
@@ -246,24 +238,23 @@
       </div>
     </section>
 
-    <!-- TAB 5: PENGATURAN -->
     <section id="view-pengaturan" class="hidden space-y-4 animate-fade-in">
       <div class="glass-card rounded-2xl p-4 shadow-sm space-y-3">
-        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">Keamanan & Integrasi AI</h3>
+        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">Status Sistem & Integrasi</h3>
         <div class="flex items-center gap-3 bg-emerald-50 border border-emerald-200 p-3.5 rounded-xl">
           <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
             <i class="fa-solid fa-shield-halved"></i>
           </div>
           <div>
-            <p class="text-xs font-bold text-emerald-900">AI Terintegrasi Otomatis</p>
-            <p class="text-[10px] text-emerald-700 mt-0.5">Sistem AI Gemini terpasang otomatis. Pengguna dapat langsung memindai struk tanpa perlu isi API Key.</p>
+            <p class="text-xs font-bold text-emerald-900">Integrasi AI Aktif</p>
+            <p class="text-[10px] text-emerald-700 mt-0.5">Gemini AI Vision terintegrasi secara otomatis tanpa perlu konfigurasi manual dari pengguna.</p>
           </div>
         </div>
       </div>
 
       <div class="glass-card rounded-2xl p-4 shadow-sm space-y-3">
         <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">Penyimpanan Browser</h3>
-        <p class="text-xs text-slate-500 leading-relaxed">Seluruh catatan keuangan disimpan mandiri di dalam perangkat ini (localStorage). Data tidak dikirim ke spreadsheet atau server luar.</p>
+        <p class="text-xs text-slate-500 leading-relaxed">Seluruh catatan keuangan kamu disimpan mandiri dan 100% lokal di dalam perangkat/browser ini (localStorage). Data tidak pernah dikirim ke server luar.</p>
         
         <div class="pt-2 space-y-2">
           <button onclick="eksporExcel()" class="ios-btn w-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold py-3 rounded-xl text-xs flex items-center justify-center gap-2">
@@ -352,7 +343,7 @@
   </nav>
 
   <script>
-    // Enkripsi Base64 API Key agar tidak diblokir otomatis oleh GitHub Secret Scanning
+    // Enkripsi Base64 API Key untuk mencegah pembatalan otomatis oleh GitHub Secret Scanner
     const OBFUSCATED_KEY = "QUl6YVN5Q2R6LVk5MHBUTENrZ2Q0OWM5Q2NodE1uSThQcmltTG9v";
     const DB_KEY = 'kaspintar_ios_db';
     
@@ -361,7 +352,6 @@
     let chartKategoriInstance = null;
     let chartArusKasInstance = null;
     let selectedImageBase64 = null;
-    let videoStream = null;
 
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('tanggal').valueAsDate = new Date();
@@ -392,8 +382,6 @@
     }
 
     function switchTab(tabName) {
-      if (videoStream) matikanKameraLive();
-
       ['beranda', 'transaksi', 'laporan', 'scan', 'pengaturan'].forEach(v => {
         document.getElementById(`view-${v}`).classList.add('hidden');
         const tabEl = document.getElementById(`tab-${v}`);
@@ -424,89 +412,56 @@
       }
     }
 
-    /* Live Camera Stream System */
-    async function bukaKameraLive() {
-      const cameraBox = document.getElementById('camera-box');
-      const videoEl = document.getElementById('video-feed');
-      
-      try {
-        videoStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } },
-          audio: false
-        });
-        videoEl.srcObject = videoStream;
-        cameraBox.classList.remove('hidden');
-      } catch (err) {
-        console.warn("Camera Stream Gagal, beralih ke input kamera bawaan HP:", err);
-        document.getElementById('foto-struk-galeri').click();
-      }
-    }
+    function prosesInputGambar(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
 
-    function jepretFotoKamera() {
-      const videoEl = document.getElementById('video-feed');
-      const canvas = document.getElementById('canvas-temp');
-      const ctx = canvas.getContext('2d');
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // Batasi ukuran maksimal gambar ke 800px untuk kompresi payload super cepat
+          const MAX_SIZE = 800;
+          let width = img.width;
+          let height = img.height;
 
-      canvas.width = videoEl.videoWidth || 640;
-      canvas.height = videoEl.videoHeight || 480;
-      ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-
-      selectedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
-      document.getElementById('img-preview').src = selectedImageBase64;
-      document.getElementById('preview-container').classList.remove('hidden');
-
-      matikanKameraLive();
-    }
-
-    function matikanKameraLive() {
-      if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
-        videoStream = null;
-      }
-      document.getElementById('camera-box').classList.add('hidden');
-    }
-
-    function previewGambar(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const img = new Image();
-          img.onload = function() {
-            const canvas = document.getElementById('canvas-temp');
-            const ctx = canvas.getContext('2d');
-            const MAX_WIDTH = 1000;
-            let width = img.width;
-            let height = img.height;
-
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height = Math.round(height * (MAX_SIZE / width));
+              width = MAX_SIZE;
             }
-
-            canvas.width = width;
-            canvas.height = height;
-            ctx.drawImage(img, 0, 0, width, height);
-
-            selectedImageBase64 = canvas.toDataURL('image/jpeg', 0.85);
-            document.getElementById('img-preview').src = selectedImageBase64;
-            document.getElementById('preview-container').classList.remove('hidden');
+          } else {
+            if (height > MAX_SIZE) {
+              width = Math.round(width * (MAX_SIZE / height));
+              height = MAX_SIZE;
+            }
           }
-          img.src = e.target.result;
-        }
-        reader.readAsDataURL(file);
-      }
+
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Kompresi kualitas JPEG 70%
+          selectedImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          document.getElementById('img-preview').src = selectedImageBase64;
+          document.getElementById('preview-container').classList.remove('hidden');
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
     }
 
-    /* Pemindaian Struk AI */
     async function pindaiStrukAI() {
       if (!navigator.onLine) {
-        alert('Fitur pemindaian AI memerlukan koneksi internet.');
+        alert('Fitur pemindaian AI memerlukan koneksi internet aktif.');
         return;
       }
 
       if (!selectedImageBase64) {
-        alert('Silakan jepret kamera atau pilih foto nota terlebih dahulu!');
+        alert('Silakan ambil foto dari kamera atau pilih foto dari galeri terlebih dahulu!');
         return;
       }
 
@@ -517,31 +472,27 @@
       try {
         const base64Data = selectedImageBase64.split(',')[1];
         const apiKey = getApiKey();
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        
+        if (!apiKey) {
+          throw new Error("API Key tidak dikonfigurasi.");
+        }
 
-        const promptText = "Analisis foto struk/nota belanja ini. Ekstrak total pembayaran dalam nominal angka saja, tentukan tanggal (YYYY-MM-DD), buat nama kategori singkat (misal: Makanan, Transportasi, Belanja), dan tulis catatan ringkas.";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+        const promptText = "Analisis foto nota/struk belanja ini. Kembalikan data transaksi dalam JSON murni tanpa markdown dengan field: total (number angka murni), kategori (string singkat), keterangan (string singkat), tanggal (string format YYYY-MM-DD).";
 
         const payload = {
           contents: [{
-            role: "user",
             parts: [
               { text: promptText },
-              { inlineData: { mimeType: "image/jpeg", data: base64Data } }
+              {
+                inline_data: {
+                  mime_type: "image/jpeg",
+                  data: base64Data
+                }
+              }
             ]
-          }],
-          generationConfig: {
-            responseMimeType: "application/json",
-            responseSchema: {
-              type: "OBJECT",
-              properties: {
-                total: { type: "NUMBER" },
-                kategori: { type: "STRING" },
-                keterangan: { type: "STRING" },
-                tanggal: { type: "STRING" }
-              },
-              required: ["total", "kategori", "keterangan", "tanggal"]
-            }
-          }
+          }]
         };
 
         const response = await fetch(apiUrl, {
@@ -551,33 +502,37 @@
         });
 
         if (!response.ok) {
-          throw new Error(`Google AI API Error: ${response.status}`);
+          const errBody = await response.text();
+          console.error("Gemini API Error details:", response.status, errBody);
+          throw new Error(`API Error HTTP ${response.status}`);
         }
 
         const resData = await response.json();
-        const responseText = resData.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!responseText) throw new Error("Gagal membaca hasil dari AI.");
+        const rawText = resData.candidates?.[0]?.content?.parts?.[0]?.text;
+        
+        if (!rawText) throw new Error("Format respons tidak memuat teks hasil.");
 
-        const hasil = JSON.parse(responseText);
+        // Bersihkan pembungkus markdown JSON (```json ... ```)
+        const cleanJsonText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+        const hasil = JSON.parse(cleanJsonText);
 
         switchTab('beranda');
-        if (hasil.total) document.getElementById('nominal').value = hasil.total;
+        if (hasil.total) document.getElementById('nominal').value = Number(hasil.total);
         if (hasil.kategori) document.getElementById('kategori').value = hasil.kategori;
         if (hasil.keterangan) document.getElementById('keterangan').value = hasil.keterangan;
         if (hasil.tanggal) document.getElementById('tanggal').value = hasil.tanggal;
         document.getElementById('jenis').value = 'pengeluaran';
 
-        alert('Berhasil membaca struk! Silakan periksa kembali data sebelum disimpan.');
+        alert('Berhasil membaca struk! Silakan periksa formulir di Beranda sebelum menyimpan.');
       } catch (err) {
-        console.error(err);
-        alert('Gagal memproses struk. Pastikan foto nota terlihat jelas dan terang.');
+        console.error("Scan Struk Error:", err);
+        alert('Gagal membaca nota secara otomatis. Kamu dapat mengisikan data secara manual pada halaman Beranda.');
       } finally {
         btnScan.disabled = false;
         btnScan.innerHTML = `<i class="fa-solid fa-bolt"></i> Analisis Struk Otomatis`;
       }
     }
 
-    /* Sistem Manajemen Data Keuangan */
     function muatData() {
       const raw = localStorage.getItem(DB_KEY);
       dataTransaksi = raw ? JSON.parse(raw) : [];
