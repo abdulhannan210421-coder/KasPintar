@@ -969,12 +969,13 @@
       });
     }
 
-    // PERBAIKAN TOTAL EKSPOR EXCEL (Menggunakan Web Share API / Blob aman tanpa error protokol)
+    // FUNGSI EKSPOR EXCEL BERBASIS BASE64 (DIPERBAIKI & DISINKRONKAN DENGAN KODULAR)
     function eksporExcel() {
       if (dataTransaksi.length === 0) {
         showToast('Belum ada data transaksi untuk diekspor!', 'error');
         return;
       }
+      
       const formattedData = dataTransaksi.map(item => ({
         Tanggal: item.tanggal,
         Jenis: item.jenis.toUpperCase(),
@@ -987,28 +988,33 @@
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Keuangan");
       
-      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'binary' });
       
-      if (navigator.canShare && navigator.canShare({ files: [new File([blob], "laporan.xlsx", { type: blob.type })] })) {
-        const file = new File([blob], `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.xlsx`, { type: blob.type });
-        navigator.share({
-          files: [file],
-          title: 'Laporan Keuangan KasPintar',
-          text: 'Berikut adalah laporan keuangan KasPintar Anda.'
-        }).catch(() => {});
-      } else {
-        const blobUrl = URL.createObjectURL(blob);
+      function s2ab(s) {
+        const buf = new ArrayBuffer(s.length);
+        const view = new Uint8Array(buf);
+        for (let i = 0; i !== s.length; ++i) view[i] = s.charCodeAt(0) & 0xFF;
+        return buf;
+      }
+
+      const blob = new Blob([s2ab(wbout)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const reader = new FileReader();
+      
+      reader.onload = function(e) {
+        const base64Data = e.target.result;
+        const fileName = `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.xlsx`;
+        
         const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.xlsx`;
+        a.href = base64Data;
+        a.download = fileName;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(blobUrl);
-      }
+        
+        showToast('Laporan Excel berhasil diproses!', 'success');
+      };
       
-      showToast('Laporan Excel berhasil diproses!', 'success');
+      reader.readAsDataURL(blob);
     }
 
     function eksporCSV() {
