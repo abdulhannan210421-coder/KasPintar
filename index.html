@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>KasPintar - Pencatat Keuangan iOS</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- SheetJS CDN untuk Ekspor Excel -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f2f2f7;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+    .ios-nav {
+      background: rgba(249, 249, 249, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 0.5px solid rgba(0, 0, 0, 0.12);
+    }
+    .ios-btn {
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .ios-btn:active {
+      transform: scale(0.96);
+      opacity: 0.82;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.25s ease-out forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="text-slate-900 pb-28 min-h-screen">
+
+  <!-- Top iOS Header Bar -->
+  <header class="sticky top-0 z-40 bg-slate-100/80 backdrop-blur-md border-b border-slate-200/60 px-5 py-3.5 flex justify-between items-center shadow-sm">
+    <div>
+      <p class="text-[10px] font-bold tracking-widest text-indigo-600 uppercase">KasPintar AI</p>
+      <h1 class="text-xl font-extrabold tracking-tight text-slate-900" id="header-title">Beranda</h1>
+    </div>
+    <div id="status-badge" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">
+      <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+      <span id="status-text">Online</span>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="max-w-md mx-auto px-4 pt-4 space-y-5">
+
+    <!-- TAB 1: BERANDA -->
+    <section id="view-beranda" class="space-y-4 animate-fade-in">
+      <!-- Balance Card -->
+      <div class="bg-gradient-to-br from-indigo-600 via-indigo-700 to-slate-900 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden">
+        <div class="absolute -right-8 -bottom-8 w-36 h-36 bg-white/10 rounded-full blur-2xl"></div>
+        <div class="flex justify-between items-center">
+          <p class="text-xs font-semibold text-indigo-200 uppercase tracking-wider">Total Saldo Bersih</p>
+          <span class="text-[10px] bg-white/15 px-2.5 py-1 rounded-full font-medium">Bulan Ini</span>
+        </div>
+        <h2 id="total-saldo" class="text-3xl font-black mt-1.5 tracking-tight">Rp 0</h2>
+        
+        <div class="grid grid-cols-2 gap-3 mt-6 pt-4 border-t border-white/15">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <i class="fa-solid fa-arrow-down text-xs"></i>
+            </div>
+            <div>
+              <p class="text-[10px] text-indigo-200 uppercase font-medium">Pemasukan</p>
+              <p id="total-pemasukan" class="text-sm font-bold text-emerald-300">Rp 0</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-2xl bg-rose-500/20 flex items-center justify-center text-rose-400">
+              <i class="fa-solid fa-arrow-up text-xs"></i>
+            </div>
+            <div>
+              <p class="text-[10px] text-indigo-200 uppercase font-medium">Pengeluaran</p>
+              <p id="total-pengeluaran" class="text-sm font-bold text-rose-300">Rp 0</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Input Transaksi -->
+      <div class="glass-card rounded-2xl p-4 shadow-sm space-y-3">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+          <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <i class="fa-solid fa-plus-circle text-indigo-600"></i> Catat Transaksi Baru
+          </h3>
+          <span class="text-[11px] text-slate-400">Manual</span>
+        </div>
+
+        <form id="form-transaksi" onsubmit="tambahTransaksi(event)" class="space-y-3">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-500 mb-1">Jenis</label>
+              <select id="jenis" class="w-full bg-slate-100 border-0 p-2.5 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="pengeluaran">Pengeluaran (-)</option>
+                <option value="pemasukan">Pemasukan (+)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-500 mb-1">Nominal (Rp)</label>
+              <input type="number" id="nominal" placeholder="0" required min="1" class="w-full bg-slate-100 border-0 p-2.5 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-500 mb-1">Kategori</label>
+              <input type="text" id="kategori" placeholder="Makanan, Gaji, dll" required class="w-full bg-slate-100 border-0 p-2.5 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-500 mb-1">Tanggal</label>
+              <input type="date" id="tanggal" required class="w-full bg-slate-100 border-0 p-2.5 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-500 mb-1">Catatan Tambahan</label>
+            <input type="text" id="keterangan" placeholder="Contoh: Beli makan siang warteg" class="w-full bg-slate-100 border-0 p-2.5 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+
+          <button type="submit" class="ios-btn w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl text-xs shadow-md shadow-indigo-200">
+            Simpan Transaksi
+          </button>
+        </form>
+      </div>
+
+      <!-- Transaksi Terakhir -->
+      <div class="space-y-2">
+        <div class="flex justify-between items-center px-1">
+          <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Transaksi Terbaru</h3>
+          <button onclick="switchTab('transaksi')" class="text-xs font-bold text-indigo-600">Lihat Semua</button>
+        </div>
+        <div id="list-terakhir" class="space-y-2"></div>
+      </div>
+    </section>
+
+    <!-- TAB 2: TRANSAKSI -->
+    <section id="view-transaksi" class="hidden space-y-4 animate-fade-in">
+      <div class="glass-card rounded-2xl p-3 shadow-sm flex items-center gap-2">
+        <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs ml-2"></i>
+        <input type="text" id="search-input" onkeyup="filterTransaksi()" placeholder="Cari kategori atau catatan..." class="w-full bg-transparent border-0 text-xs outline-none text-slate-800">
+      </div>
+
+      <div class="flex justify-between items-center px-1 text-xs">
+        <div class="flex gap-1.5">
+          <button onclick="setFilterCategory('semua')" id="filter-btn-semua" class="px-3 py-1 rounded-full font-semibold text-[11px] bg-indigo-600 text-white">Semua</button>
+          <button onclick="setFilterCategory('pengeluaran')" id="filter-btn-pengeluaran" class="px-3 py-1 rounded-full font-semibold text-[11px] bg-slate-200 text-slate-700">Pengeluaran</button>
+          <button onclick="setFilterCategory('pemasukan')" id="filter-btn-pemasukan" class="px-3 py-1 rounded-full font-semibold text-[11px] bg-slate-200 text-slate-700">Pemasukan</button>
+        </div>
+        <button onclick="eksporExcel()" class="ios-btn text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg font-bold border border-emerald-200 flex items-center gap-1.5">
+          <i class="fa-solid fa-file-excel"></i> Excel
+        </button>
+      </div>
+
+      <div id="list-transaksi-lengkap" class="space-y-2"></div>
+    </section>
+
+    <!-- TAB 3: LAPORAN -->
+    <section id="view-laporan" class="hidden space-y-4 animate-fade-in">
+      <!-- Recap Cards -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="glass-card p-4 rounded-2xl border border-slate-200">
+          <p class="text-[10px] text-slate-400 font-bold uppercase">Rata-rata Pengeluaran</p>
+          <p id="avg-pengeluaran" class="text-base font-extrabold text-slate-800 mt-1">Rp 0</p>
+        </div>
+        <div class="glass-card p-4 rounded-2xl border border-slate-200">
+          <p class="text-[10px] text-slate-400 font-bold uppercase">Total Pencatatan</p>
+          <p id="total-count" class="text-base font-extrabold text-slate-800 mt-1">0 Transaksi</p>
+        </div>
+      </div>
+
+      <!-- Kategori Chart -->
+      <div class="glass-card rounded-2xl p-4 shadow-sm space-y-3">
+        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">Proporsi Pengeluaran per Kategori</h3>
+        <div class="relative h-56 flex justify-center items-center">
+          <canvas id="chartKategori"></canvas>
+        </div>
+      </div>
+
+      <!-- Arus Kas Chart -->
+      <div class="glass-card rounded-2xl p-4 shadow-sm space-y-3">
+        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">Perbandingan Arus Kas</h3>
+        <div class="relative h-48">
+          <canvas id="chartArusKas"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: SCAN AI STRUK -->
+    <section id="view-scan" class="hidden space-y-4 animate-fade-in">
+      <div class="glass-card rounded-2xl p-5 shadow-sm space-y-4 text-center">
+        <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto text-2xl shadow-inner border border-indigo-100">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-slate-800">Scan Struk / Nota dengan AI</h3>
+          <p class="text-xs text-slate-500 mt-1">Unggah atau foto nota belanja. AI Gemini akan mengekstrak nominal, tanggal, dan kategori secara otomatis.</p>
+        </div>
+
+        <div class="space-y-3 pt-2">
+          <input type="file" id="foto-struk" accept="image/*" class="hidden" onchange="previewGambar(event)">
+          
+          <button onclick="document.getElementById('foto-struk').click()" class="ios-btn w-full bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-semibold py-3 rounded-xl text-xs flex items-center justify-center gap-2">
+            <i class="fa-solid fa-camera text-indigo-600"></i> Ambil / Pilih Gambar Struk
+          </button>
+          
+          <div id="preview-container" class="hidden relative rounded-xl overflow-hidden border border-slate-200 shadow-inner">
+            <img id="img-preview" class="w-full h-44 object-cover" src="" alt="Preview Struk">
+          </div>
+
+          <button onclick="pindaiStrukAI()" id="btn-scan" class="ios-btn w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl text-xs shadow-md shadow-indigo-200 flex items-center justify-center gap-2">
+            <i class="fa-solid fa-bolt"></i> Analisis Struk Otomatis
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: PENGATURAN -->
+    <section id="view-pengaturan" class="hidden space-y-4 animate-fade-in">
+      <div class="glass-card rounded-2xl p-4 shadow-sm space-y-3">
+        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">Pengaturan Gemini AI API</h3>
+        <p class="text-xs text-slate-500">Secara bawaan, aplikasi akan memproses struk secara otomatis. Jika kamu ingin menggunakan API Key pribadi saat offline/lokal, kamu bisa mengisinya di bawah:</p>
+        
+        <div class="space-y-2 pt-1">
+          <label class="block text-xs font-semibold text-slate-600">API Key Pribadi (Opsional)</label>
+          <input type="password" id="api-key" placeholder="Masukkan Gemini API Key (Opsional)..." class="w-full bg-slate-100 border-0 p-2.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-500" onchange="simpanApiKey()">
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" class="inline-flex items-center gap-1 text-xs text-indigo-600 font-semibold hover:underline mt-1">
+            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> Dapatkan API Key Gratis di Google AI Studio
+          </a>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-2xl p-4 shadow-sm space-y-3">
+        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider border-b pb-2">Penyimpanan Browser</h3>
+        <p class="text-xs text-slate-500">Data keuangan disimpan mandiri di browser ini. Tidak dikirim ke spreadsheet atau server eksternal.</p>
+        
+        <div class="pt-2 space-y-2">
+          <button onclick="eksporExcel()" class="ios-btn w-full bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2">
+            <i class="fa-solid fa-download"></i> Ekspor Laporan Excel
+          </button>
+          <button onclick="bersihkanPenyimpanan()" class="ios-btn w-full bg-rose-50 border border-rose-200 text-rose-600 font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2">
+            <i class="fa-solid fa-trash-can"></i> Bersihkan Semua Data
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Edit Transaction Modal -->
+  <div id="modal-edit" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-sm rounded-3xl p-5 shadow-2xl space-y-4 animate-fade-in">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="text-sm font-bold text-slate-800">Edit Transaksi</h3>
+        <button onclick="tutupModalEdit()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+      <form id="form-edit" onsubmit="simpanEditTransaksi(event)" class="space-y-3">
+        <input type="hidden" id="edit-id">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-500 mb-1">Jenis</label>
+            <select id="edit-jenis" class="w-full bg-slate-100 p-2.5 rounded-xl text-xs font-semibold text-slate-700 border-0 outline-none">
+              <option value="pengeluaran">Pengeluaran (-)</option>
+              <option value="pemasukan">Pemasukan (+)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-500 mb-1">Nominal (Rp)</label>
+            <input type="number" id="edit-nominal" required min="1" class="w-full bg-slate-100 p-2.5 rounded-xl text-xs font-bold text-slate-800 border-0 outline-none">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-500 mb-1">Kategori</label>
+            <input type="text" id="edit-kategori" required class="w-full bg-slate-100 p-2.5 rounded-xl text-xs font-medium text-slate-800 border-0 outline-none">
+          </div>
+          <div>
+            <label class="block text-[10px] font-semibold text-slate-500 mb-1">Tanggal</label>
+            <input type="date" id="edit-tanggal" required class="w-full bg-slate-100 p-2.5 rounded-xl text-xs font-medium text-slate-800 border-0 outline-none">
+          </div>
+        </div>
+        <div>
+          <label class="block text-[10px] font-semibold text-slate-500 mb-1">Catatan</label>
+          <input type="text" id="edit-keterangan" class="w-full bg-slate-100 p-2.5 rounded-xl text-xs font-medium text-slate-800 border-0 outline-none">
+        </div>
+        <button type="submit" class="ios-btn w-full bg-indigo-600 text-white font-semibold py-2.5 rounded-xl text-xs shadow-md shadow-indigo-200">
+          Simpan Perubahan
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bottom iOS Navigation Bar -->
+  <nav class="fixed bottom-0 left-0 right-0 z-40 ios-nav px-4 py-2 shadow-lg">
+    <div class="max-w-md mx-auto flex justify-around items-center">
+      <button onclick="switchTab('beranda')" id="tab-beranda" class="tab-btn flex flex-col items-center gap-1 text-indigo-600">
+        <i class="fa-solid fa-house text-lg"></i>
+        <span class="text-[10px] font-medium">Beranda</span>
+      </button>
+      <button onclick="switchTab('transaksi')" id="tab-transaksi" class="tab-btn flex flex-col items-center gap-1 text-slate-400">
+        <i class="fa-solid fa-list-check text-lg"></i>
+        <span class="text-[10px] font-medium">Transaksi</span>
+      </button>
+      <button onclick="switchTab('scan')" id="tab-scan" class="tab-btn flex flex-col items-center gap-1 text-slate-400">
+        <div class="w-11 h-11 -mt-6 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+          <i class="fa-solid fa-camera text-base"></i>
+        </div>
+        <span class="text-[10px] font-medium">Scan AI</span>
+      </button>
+      <button onclick="switchTab('laporan')" id="tab-laporan" class="tab-btn flex flex-col items-center gap-1 text-slate-400">
+        <i class="fa-solid fa-chart-pie text-lg"></i>
+        <span class="text-[10px] font-medium">Laporan</span>
+      </button>
+      <button onclick="switchTab('pengaturan')" id="tab-pengaturan" class="tab-btn flex flex-col items-center gap-1 text-slate-400">
+        <i class="fa-solid fa-gear text-lg"></i>
+        <span class="text-[10px] font-medium">Pengaturan</span>
+      </button>
+    </div>
+  </nav>
+
+  <script>
+    const DB_KEY = 'kaspintar_ios_db';
+    const API_KEY_STORAGE = 'gemini_api_key';
+    let dataTransaksi = [];
+    let currentCategoryFilter = 'semua';
+    let chartKategoriInstance = null;
+    let chartArusKasInstance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('tanggal').valueAsDate = new Date();
+      muatApiKey();
+      muatData();
+      cekKoneksi();
+      window.addEventListener('online', cekKoneksi);
+      window.addEventListener('offline', cekKoneksi);
+    });
+
+    function cekKoneksi() {
+      const badge = document.getElementById('status-badge');
+      const text = document.getElementById('status-text');
+      if (navigator.onLine) {
+        badge.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700';
+        text.innerText = 'Online';
+      } else {
+        badge.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700';
+        text.innerText = 'Offline';
+      }
+    }
+
+    function switchTab(tabName) {
+      ['beranda', 'transaksi', 'laporan', 'scan', 'pengaturan'].forEach(v => {
+        document.getElementById(`view-${v}`).classList.add('hidden');
+        const tabEl = document.getElementById(`tab-${v}`);
+        if(tabEl) {
+          tabEl.classList.remove('text-indigo-600');
+          tabEl.classList.add('text-slate-400');
+        }
+      });
+
+      document.getElementById(`view-${tabName}`).classList.remove('hidden');
+      const activeTab = document.getElementById(`tab-${tabName}`);
+      if(activeTab) {
+        activeTab.classList.remove('text-slate-400');
+        activeTab.classList.add('text-indigo-600');
+      }
+
+      const titles = {
+        beranda: 'Beranda',
+        transaksi: 'Riwayat Transaksi',
+        laporan: 'Laporan & Analistik',
+        scan: 'Pindai Struk AI',
+        pengaturan: 'Pengaturan'
+      };
+      document.getElementById('header-title').innerText = titles[tabName];
+
+      if (tabName === 'laporan') {
+        renderCharts();
+      }
+    }
+
+    function muatData() {
+      const raw = localStorage.getItem(DB_KEY);
+      dataTransaksi = raw ? JSON.parse(raw) : [];
+      perbaruiTampilan();
+    }
+
+    function simpanKeStorage() {
+      localStorage.setItem(DB_KEY, JSON.stringify(dataTransaksi));
+      perbaruiTampilan();
+    }
+
+    function perbaruiTampilan() {
+      let sumMasuk = 0;
+      let sumKeluar = 0;
+
+      dataTransaksi.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+
+      // Quick Preview (Max 4 items)
+      const listTerakhir = document.getElementById('list-terakhir');
+      listTerakhir.innerHTML = '';
+
+      if (dataTransaksi.length === 0) {
+        listTerakhir.innerHTML = `<div class="glass-card p-4 rounded-xl text-center text-xs text-slate-400">Belum ada transaksi dicatat.</div>`;
+      } else {
+        dataTransaksi.slice(0, 4).forEach((item) => {
+          listTerakhir.appendChild(createItemCard(item));
+        });
+      }
+
+      dataTransaksi.forEach(item => {
+        if (item.jenis === 'pemasukan') sumMasuk += Number(item.nominal);
+        if (item.jenis === 'pengeluaran') sumKeluar += Number(item.nominal);
+      });
+
+      document.getElementById('total-pemasukan').innerText = formatRupiah(sumMasuk);
+      document.getElementById('total-pengeluaran').innerText = formatRupiah(sumKeluar);
+      document.getElementById('total-saldo').innerText = formatRupiah(sumMasuk - sumKeluar);
+
+      renderFullList();
+    }
+
+    function createItemCard(item) {
+      const div = document.createElement('div');
+      div.className = 'glass-card p-3 rounded-2xl flex justify-between items-center shadow-sm';
+      const isMasuk = item.jenis === 'pemasukan';
+      
+      div.innerHTML = `
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl ${isMasuk ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'} flex items-center justify-center font-bold text-xs">
+            <i class="fa-solid ${isMasuk ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
+          </div>
+          <div>
+            <p class="text-xs font-bold text-slate-800">${item.kategori}</p>
+            <p class="text-[10px] text-slate-400">${item.tanggal} ${item.keterangan ? '• ' + item.keterangan : ''}</p>
+          </div>
+        </div>
+        <div class="text-right flex items-center gap-2">
+          <span class="text-xs font-extrabold ${isMasuk ? 'text-emerald-600' : 'text-rose-600'}">
+            ${isMasuk ? '+' : '-'} ${formatRupiah(item.nominal)}
+          </span>
+          <button onclick="bukaModalEdit('${item.id}')" class="text-slate-300 hover:text-indigo-600 text-xs p-1">
+            <i class="fa-solid fa-pen"></i>
+          </button>
+          <button onclick="hapusTransaksi('${item.id}')" class="text-slate-300 hover:text-rose-500 text-xs p-1">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      `;
+      return div;
+    }
+
+    function renderFullList() {
+      const container = document.getElementById('list-transaksi-lengkap');
+      container.innerHTML = '';
+
+      const query = (document.getElementById('search-input')?.value || '').toLowerCase();
+      
+      let filtered = dataTransaksi.filter(t => {
+        const matchCategory = currentCategoryFilter === 'semua' || t.jenis === currentCategoryFilter;
+        const matchQuery = t.kategori.toLowerCase().includes(query) || (t.keterangan && t.keterangan.toLowerCase().includes(query));
+        return matchCategory && matchQuery;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="glass-card p-4 rounded-xl text-center text-xs text-slate-400">Transaksi tidak ditemukan.</div>`;
+        return;
+      }
+
+      filtered.forEach((item) => {
+        container.appendChild(createItemCard(item));
+      });
+    }
+
+    function setFilterCategory(cat) {
+      currentCategoryFilter = cat;
+      ['semua', 'pengeluaran', 'pemasukan'].forEach(c => {
+        const btn = document.getElementById(`filter-btn-${c}`);
+        if (c === cat) {
+          btn.className = 'px-3 py-1 rounded-full font-semibold text-[11px] bg-indigo-600 text-white';
+        } else {
+          btn.className = 'px-3 py-1 rounded-full font-semibold text-[11px] bg-slate-200 text-slate-700';
+        }
+      });
+      renderFullList();
+    }
+
+    function filterTransaksi() {
+      renderFullList();
+    }
+
+    function tambahTransaksi(e) {
+      e.preventDefault();
+      const jenis = document.getElementById('jenis').value;
+      const nominal = Number(document.getElementById('nominal').value);
+      const kategori = document.getElementById('kategori').value;
+      const tanggal = document.getElementById('tanggal').value;
+      const keterangan = document.getElementById('keterangan').value;
+
+      dataTransaksi.push({
+        id: 'tx_' + Date.now(),
+        jenis,
+        nominal,
+        kategori,
+        tanggal,
+        keterangan
+      });
+
+      simpanKeStorage();
+
+      document.getElementById('form-transaksi').reset();
+      document.getElementById('tanggal').valueAsDate = new Date();
+    }
+
+    function hapusTransaksi(id) {
+      if (confirm('Hapus pencatatan transaksi ini?')) {
+        dataTransaksi = dataTransaksi.filter(t => t.id !== id);
+        simpanKeStorage();
+      }
+    }
+
+    function bukaModalEdit(id) {
+      const item = dataTransaksi.find(t => t.id === id);
+      if (!item) return;
+
+      document.getElementById('edit-id').value = item.id;
+      document.getElementById('edit-jenis').value = item.jenis;
+      document.getElementById('edit-nominal').value = item.nominal;
+      document.getElementById('edit-kategori').value = item.kategori;
+      document.getElementById('edit-tanggal').value = item.tanggal;
+      document.getElementById('edit-keterangan').value = item.keterangan || '';
+
+      document.getElementById('modal-edit').classList.remove('hidden');
+    }
+
+    function tutupModalEdit() {
+      document.getElementById('modal-edit').classList.add('hidden');
+    }
+
+    function simpanEditTransaksi(e) {
+      e.preventDefault();
+      const id = document.getElementById('edit-id').value;
+      const index = dataTransaksi.findIndex(t => t.id === id);
+      
+      if (index !== -1) {
+        dataTransaksi[index].jenis = document.getElementById('edit-jenis').value;
+        dataTransaksi[index].nominal = Number(document.getElementById('edit-nominal').value);
+        dataTransaksi[index].kategori = document.getElementById('edit-kategori').value;
+        dataTransaksi[index].tanggal = document.getElementById('edit-tanggal').value;
+        dataTransaksi[index].keterangan = document.getElementById('edit-keterangan').value;
+
+        simpanKeStorage();
+        tutupModalEdit();
+      }
+    }
+
+    function formatRupiah(angka) {
+      return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(angka);
+    }
+
+    function renderCharts() {
+      const totalCount = dataTransaksi.length;
+      const pengeluaranItems = dataTransaksi.filter(d => d.jenis === 'pengeluaran');
+      const totalPengeluaran = pengeluaranItems.reduce((acc, curr) => acc + Number(curr.nominal), 0);
+      const avg = pengeluaranItems.length > 0 ? totalPengeluaran / pengeluaranItems.length : 0;
+
+      document.getElementById('avg-pengeluaran').innerText = formatRupiah(avg);
+      document.getElementById('total-count').innerText = `${totalCount} Transaksi`;
+
+      // Doughnut Chart (Kategori)
+      const kategoriMap = {};
+      pengeluaranItems.forEach(item => {
+        kategoriMap[item.kategori] = (kategoriMap[item.kategori] || 0) + Number(item.nominal);
+      });
+
+      const ctxKategori = document.getElementById('chartKategori').getContext('2d');
+      if (chartKategoriInstance) chartKategoriInstance.destroy();
+      
+      chartKategoriInstance = new Chart(ctxKategori, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(kategoriMap).length > 0 ? Object.keys(kategoriMap) : ['Belum Ada Data'],
+          datasets: [{
+            data: Object.values(kategoriMap).length > 0 ? Object.values(kategoriMap) : [1],
+            backgroundColor: ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#64748B']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }
+        }
+      });
+
+      // Bar Chart (Arus Kas)
+      const totalMasuk = dataTransaksi.filter(d => d.jenis === 'pemasukan').reduce((a, c) => a + Number(c.nominal), 0);
+      const ctxArusKas = document.getElementById('chartArusKas').getContext('2d');
+      if (chartArusKasInstance) chartArusKasInstance.destroy();
+
+      chartArusKasInstance = new Chart(ctxArusKas, {
+        type: 'bar',
+        data: {
+          labels: ['Pemasukan', 'Pengeluaran'],
+          datasets: [{
+            data: [totalMasuk, totalPengeluaran],
+            backgroundColor: ['#10B981', '#EF4444'],
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function eksporExcel() {
+      if (dataTransaksi.length === 0) {
+        alert('Belum ada data transaksi untuk diekspor!');
+        return;
+      }
+      const formattedData = dataTransaksi.map(item => ({
+        Tanggal: item.tanggal,
+        Jenis: item.jenis.toUpperCase(),
+        Kategori: item.kategori,
+        Catatan: item.keterangan || '-',
+        Nominal: item.nominal
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(formattedData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Keuangan");
+      XLSX.writeFile(workbook, `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
+
+    function previewGambar(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('img-preview').src = e.target.result;
+          document.getElementById('preview-container').classList.remove('hidden');
+        }
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function muatApiKey() {
+      const storedKey = localStorage.getItem(API_KEY_STORAGE);
+      if (storedKey) document.getElementById('api-key').value = storedKey;
+    }
+
+    function simpanApiKey() {
+      const key = document.getElementById('api-key').value.trim();
+      localStorage.setItem(API_KEY_STORAGE, key);
+      alert('API Key berhasil disimpan.');
+    }
+
+    function getApiKey() {
+      return localStorage.getItem(API_KEY_STORAGE) || "";
+    }
+
+    async function pindaiStrukAI() {
+      if (!navigator.onLine) {
+        alert('Fitur pemindaian AI memerlukan koneksi internet.');
+        return;
+      }
+
+      const fileInput = document.getElementById('foto-struk');
+      if (!fileInput.files || fileInput.files.length === 0) {
+        alert('Pilih atau foto struk terlebih dahulu.');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const btnScan = document.getElementById('btn-scan');
+      btnScan.disabled = true;
+      btnScan.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menganalisis Struk...`;
+
+      try {
+        const base64Image = await convertBase64(file);
+        const base64Data = base64Image.split(',')[1];
+
+        const apiKey = getApiKey();
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+        const promptText = "Analisis foto struk/nota belanja ini. Ekstrak data transaksi dalam format JSON murni. Pilih tanggal dalam format YYYY-MM-DD. Tentukan kategori yang relevan (misal: Makanan, Belanja, Transportasi, Hiburan, Tagihan, Lain-lain). Tuliskan catatan ringkas di keterangan.";
+
+        const payload = {
+          contents: [
+            {
+              role: "user",
+              parts: [
+                { text: promptText },
+                {
+                  inlineData: {
+                    mimeType: file.type || "image/jpeg",
+                    data: base64Data
+                  }
+                }
+              ]
+            }
+          ],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: "OBJECT",
+              properties: {
+                total: { type: "NUMBER" },
+                kategori: { type: "STRING" },
+                keterangan: { type: "STRING" },
+                tanggal: { type: "STRING" }
+              },
+              required: ["total", "kategori", "keterangan", "tanggal"]
+            }
+          }
+        };
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP Error: ${response.status}`);
+        }
+
+        const resData = await response.json();
+        const responseText = resData.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!responseText) throw new Error("Format respons tidak sesuai.");
+
+        const hasil = JSON.parse(responseText);
+
+        switchTab('beranda');
+        if (hasil.total) document.getElementById('nominal').value = hasil.total;
+        if (hasil.kategori) document.getElementById('kategori').value = hasil.kategori;
+        if (hasil.keterangan) document.getElementById('keterangan').value = hasil.keterangan;
+        if (hasil.tanggal) document.getElementById('tanggal').value = hasil.tanggal;
+        document.getElementById('jenis').value = 'pengeluaran';
+
+        alert('Berhasil membaca struk! Silakan periksa data sebelum disimpan.');
+      } catch (err) {
+        console.error(err);
+        alert('Gagal memproses struk. Jika kamu membuka file ini secara lokal/offline tanpa platform Canvas, pastikan untuk mengisi Gemini API Key di menu Pengaturan. Kamu bisa mendapatkan key gratis di Google AI Studio.');
+      } finally {
+        btnScan.disabled = false;
+        btnScan.innerHTML = `<i class="fa-solid fa-bolt"></i> Analisis Struk Otomatis`;
+      }
+    }
+
+    function convertBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+      });
+    }
+
+    function bersihkanPenyimpanan() {
+      if (confirm('Apakah kamu yakin ingin menghapus SELURUH data keuangan di browser ini?')) {
+        localStorage.removeItem(DB_KEY);
+        dataTransaksi = [];
+        perbaruiTampilan();
+        alert('Seluruh data berhasil dibersihkan.');
+      }
+    }
+  </script>
+</body>
+</html>
