@@ -478,13 +478,13 @@
     }
 
     // PENERIMA PATH GAMBAR DARI KODULAR CAMERA1 (SUDAH DIKONVERSI KE BASE64)
-	function prosesGambarDariKodular(base64Data) {
-	  if (!base64Data) return;
-	  selectedImageBase64 = base64Data;
-	  document.getElementById('img-preview').src = base64Data;
-	  document.getElementById('preview-container').classList.remove('hidden');
-	  showToast('Foto struk berhasil dimuat!', 'success');
-	}
+    function prosesGambarDariKodular(base64Data) {
+      if (!base64Data) return;
+      selectedImageBase64 = base64Data;
+      document.getElementById('img-preview').src = base64Data;
+      document.getElementById('preview-container').classList.remove('hidden');
+      showToast('Foto struk berhasil dimuat!', 'success');
+    }
 
     function previewGambar(event) {
       const file = event.target.files && event.target.files[0];
@@ -942,79 +942,60 @@
       });
     }
 
-    // FUNGSI EKSPOR EXCEL BERBASIS BASE64 (DIPERBAIKI & DISINKRONKAN DENGAN KODULAR)
     function eksporExcel() {
       if (dataTransaksi.length === 0) {
-        showToast('Belum ada data transaksi untuk diekspor!', 'error');
+        showToast("Belum ada data transaksi untuk diekspor!", "error");
         return;
       }
       
       let csv = "Tanggal,Jenis,Kategori,Catatan,Nominal\n";
       dataTransaksi.forEach(t => {
-        csv += `${t.tanggal},${t.jenis.toUpperCase()},"${t.kategori}","${t.keterangan || '-'}",${t.nominal}\n`;
+        csv += `${t.tanggal},${t.jenis.toUpperCase()},"${t.kategori}","${t.keterangan || "-"}",${t.nominal}\n`;
       });
 
       if (window.AppInventor) {
-        window.AppInventor.setWebViewString('DOWNLOAD_CSV:' + csv);
-        showToast('Menyiapkan file laporan...', 'info');
+        window.AppInventor.setWebViewString("DOWNLOAD_CSV:" + Date.now() + "|" + csv);
+        showToast("Menyiapkan file laporan...", "info");
       } else {
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
-        a.download = `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `Laporan_KasPintar_${new Date().toISOString().split("T")[0]}.csv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        showToast('Laporan berhasil diunduh!', 'success');
+        showToast("Laporan berhasil diunduh!", "success");
       }
     }
 
-function eksporCSV() {
-  if (dataTransaksi.length === 0) {
-    showToast('Belum ada data transaksi!', 'error');
-    return;
-  }
-  let csvContent = "Tanggal,Jenis,Kategori,Catatan,Nominal\n";
-  dataTransaksi.forEach(t => {
-    csvContent += `${t.tanggal},${t.jenis.toUpperCase()},"${t.kategori}","${t.keterangan || '-'}",${t.nominal}\n`;
-  });
+    function eksporCSV() {
+      if (dataTransaksi.length === 0) {
+        showToast("Belum ada data transaksi!", "error");
+        return;
+      }
+      let csvContent = "Tanggal,Jenis,Kategori,Catatan,Nominal\n";
+      dataTransaksi.forEach(t => {
+        csvContent += `${t.tanggal},${t.jenis.toUpperCase()},"${t.kategori}","${t.keterangan || "-"}",${t.nominal}\n`;
+      });
 
-  if (window.AppInventor) {
-    // Tambahkan timestamp agar WebViewString selalu terdeteksi berubah oleh Kodular
-    window.AppInventor.setWebViewString('DOWNLOAD_CSV:' + Date.now() + '|' + csvContent);
-    showToast('Menyiapkan file laporan CSV...', 'info');
-  } else {
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const blobUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(blobUrl);
-    showToast('Laporan CSV berhasil diunduh!', 'success');
-  }
-}
-	  // Memicu blok file Kodular
-	  if (window.AppInventor) {
-		window.AppInventor.setWebViewString('DOWNLOAD_CSV:' + csvContent);
-		showToast('Menyiapkan file laporan CSV...', 'info');
-	  } else {
-		const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-		const blobUrl = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = blobUrl;
-		a.download = `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.csv`;
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
-		URL.revokeObjectURL(blobUrl);
-		showToast('Laporan CSV berhasil diunduh!', 'success');
-	  }
-	}
+      if (window.AppInventor) {
+        window.AppInventor.setWebViewString("DOWNLOAD_CSV:" + Date.now() + "|" + csvContent);
+        showToast("Menyiapkan file laporan CSV...", "info");
+      } else {
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = `Laporan_KasPintar_${new Date().toISOString().split("T")[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+        showToast("Laporan CSV berhasil diunduh!", "success");
+      }
+    }
 
     function bukaModalKonfirmasiHapus() {
       bukaModalConfirm('Bersihkan Semua Data', 'Tindakan ini akan menghapus SELURUH data keuangan lokal di perangkat ini. Lanjutkan?', () => {
