@@ -468,9 +468,55 @@
       }
     }
 
-    // Membuka Kamera Native lewat Input File HTML (Tanpa CORS Error file://)
+    // Panggil kamera native Kodular
     function panggilKameraKodular() {
-      document.getElementById('foto-struk-kamera').click();
+      if (window.AppInventor) {
+        window.AppInventor.setWebViewString('TAKE_PHOTO');
+      } else {
+        document.getElementById('foto-struk-kamera').click();
+      }
+    }
+
+    // PENERIMA PATH GAMBAR DARI KODULAR CAMERA1 (SUDAH DIKONVERSI KE BASE64)
+    function prosesGambarDariKodular(imagePath) {
+      if (!imagePath) return;
+      
+      let pathSesuai = imagePath;
+      if (!pathSesuai.startsWith('file://') && !pathSesuai.startsWith('data:')) {
+        pathSesuai = 'file://' + pathSesuai;
+      }
+
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const MAX_SIZE = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height = Math.round(height * (MAX_SIZE / width));
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width = Math.round(width * (MAX_SIZE / height));
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        selectedImageBase64 = canvas.toDataURL('image/jpeg', 0.75);
+        document.getElementById('img-preview').src = selectedImageBase64;
+        document.getElementById('preview-container').classList.remove('hidden');
+        showToast('Foto struk berhasil dimuat!', 'success');
+      };
+      img.src = pathSesuai;
     }
 
     function previewGambar(event) {
@@ -513,7 +559,6 @@
         selectedImageBase64 = canvas.toDataURL('image/jpeg', 0.75);
         document.getElementById('img-preview').src = selectedImageBase64;
         document.getElementById('preview-container').classList.remove('hidden');
-        showToast('Foto struk berhasil dimuat!', 'success');
       };
       img.src = dataUri;
     }
@@ -930,54 +975,32 @@
       });
     }
 
-    // FUNGSI EKSPOR EXCEL MENGGUNAKAN WEB SHARE API (MENGHINDARI BUG RUNTIME ERROR DI KODULAR)
-    async function eksporExcel() {
+    // FUNGSI EKSPOR EXCEL BERBASIS BASE64 (DIPERBAIKI & DISINKRONKAN DENGAN KODULAR)
+    function eksporExcel() {
       if (dataTransaksi.length === 0) {
         showToast('Belum ada data transaksi untuk diekspor!', 'error');
         return;
       }
       
-      try {
-        const formattedData = dataTransaksi.map(item => ({
-          Tanggal: item.tanggal,
-          Jenis: item.jenis.toUpperCase(),
-          Kategori: item.kategori,
-          Catatan: item.keterangan || '-',
-          Nominal: item.nominal
-        }));
+      let csv = "Tanggal,Jenis,Kategori,Catatan,Nominal\n";
+      dataTransaksi.forEach(t => {
+        csv += `${t.tanggal},${t.jenis.toUpperCase()},"${t.kategori}","${t.keterangan || '-'}",${t.nominal}\n`;
+      });
 
-        const worksheet = XLSX.utils.json_to_sheet(formattedData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan Keuangan");
-        
-        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-        const fileName = `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.xlsx`;
-        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const file = new File([blob], fileName, { type: blob.type });
-
-        // Membuka menu simpan/bagikan bawaan Android (Bebas dari DownloadManager crash)
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: 'Laporan Keuangan KasPintar',
-            text: 'Berikut file laporan keuangan.'
-          });
-          showToast('Laporan Excel berhasil disiapkan!', 'success');
-        } else {
-          // Fallback jika dibuka via browser biasa
-          const blobUrl = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = blobUrl;
-          a.download = fileName;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(blobUrl);
-          showToast('Laporan Excel berhasil diunduh!', 'success');
-        }
-      } catch (err) {
-        console.error(err);
-        showToast('Proses ekspor dibatalkan atau tidak didukung.', 'info');
+      if (window.AppInventor) {
+        window.AppInventor.setWebViewString('DOWNLOAD_CSV:' + csv);
+        showToast('Menyiapkan file laporan...', 'info');
+      } else {
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Laporan berhasil diunduh!', 'success');
       }
     }
 
