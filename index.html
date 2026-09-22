@@ -468,16 +468,11 @@
       }
     }
 
-    // Panggil kamera native Kodular
+    // Panggil kamera HTML standar
     function panggilKameraKodular() {
-      if (window.AppInventor) {
-        window.AppInventor.setWebViewString('TAKE_PHOTO');
-      } else {
-        document.getElementById('foto-struk-kamera').click();
-      }
+      document.getElementById('foto-struk-kamera').click();
     }
 
-    // PENERIMA PATH GAMBAR DARI KODULAR CAMERA1 (SUDAH DIKONVERSI KE BASE64)
     function prosesGambarDariKodular(base64Data) {
       if (!base64Data) return;
       selectedImageBase64 = base64Data;
@@ -953,21 +948,16 @@
         csv += `${t.tanggal},${t.jenis.toUpperCase()},"${t.kategori}","${t.keterangan || "-"}",${t.nominal}\n`;
       });
 
-      if (window.AppInventor) {
-        window.AppInventor.setWebViewString("DOWNLOAD_CSV:" + Date.now() + "|" + csv);
-        showToast("Menyiapkan file laporan...", "info");
-      } else {
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `Laporan_KasPintar_${new Date().toISOString().split("T")[0]}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showToast("Laporan berhasil diunduh!", "success");
-      }
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Laporan_KasPintar_${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("Laporan berhasil diunduh!", "success");
     }
 
     function eksporCSV() {
@@ -980,21 +970,16 @@
         csvContent += `${t.tanggal},${t.jenis.toUpperCase()},"${t.kategori}","${t.keterangan || "-"}",${t.nominal}\n`;
       });
 
-      if (window.AppInventor) {
-        window.AppInventor.setWebViewString("DOWNLOAD_CSV:" + Date.now() + "|" + csvContent);
-        showToast("Menyiapkan file laporan CSV...", "info");
-      } else {
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = blobUrl;
-        a.download = `Laporan_KasPintar_${new Date().toISOString().split("T")[0]}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(blobUrl);
-        showToast("Laporan CSV berhasil diunduh!", "success");
-      }
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `Laporan_KasPintar_${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+      showToast("Laporan CSV berhasil diunduh!", "success");
     }
 
     function bukaModalKonfirmasiHapus() {
