@@ -478,46 +478,13 @@
     }
 
     // PENERIMA PATH GAMBAR DARI KODULAR CAMERA1 (SUDAH DIKONVERSI KE BASE64)
-    function prosesGambarDariKodular(imagePath) {
-      if (!imagePath) return;
-      
-      let pathSesuai = imagePath;
-      if (!pathSesuai.startsWith('file://') && !pathSesuai.startsWith('data:')) {
-        pathSesuai = 'file://' + pathSesuai;
-      }
-
-      const img = new Image();
-      img.crossOrigin = 'Anonymous';
-      img.onload = function() {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        const MAX_SIZE = 800;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > MAX_SIZE) {
-            height = Math.round(height * (MAX_SIZE / width));
-            width = MAX_SIZE;
-          }
-        } else {
-          if (height > MAX_SIZE) {
-            width = Math.round(width * (MAX_SIZE / height));
-            height = MAX_SIZE;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        ctx.drawImage(img, 0, 0, width, height);
-
-        selectedImageBase64 = canvas.toDataURL('image/jpeg', 0.75);
-        document.getElementById('img-preview').src = selectedImageBase64;
-        document.getElementById('preview-container').classList.remove('hidden');
-        showToast('Foto struk berhasil dimuat!', 'success');
-      };
-      img.src = pathSesuai;
-    }
+	function prosesGambarDariKodular(base64Data) {
+	  if (!base64Data) return;
+	  selectedImageBase64 = base64Data;
+	  document.getElementById('img-preview').src = base64Data;
+	  document.getElementById('preview-container').classList.remove('hidden');
+	  showToast('Foto struk berhasil dimuat!', 'success');
+	}
 
     function previewGambar(event) {
       const file = event.target.files && event.target.files[0];
@@ -1004,29 +971,33 @@
       }
     }
 
-    function eksporCSV() {
-      if (dataTransaksi.length === 0) {
-        showToast('Belum ada data transaksi!', 'error');
-        return;
-      }
-      let csvContent = "data:text/csv;charset=utf-8,Tanggal,Jenis,Kategori,Catatan,Nominal\n";
-      dataTransaksi.forEach(t => {
-        csvContent += `${t.tanggal},${t.jenis.toUpperCase()},"${t.kategori}","${t.keterangan || '-'}",${t.nominal}\n`;
-      });
+	function eksporCSV() {
+	  if (dataTransaksi.length === 0) {
+		showToast('Belum ada data transaksi!', 'error');
+		return;
+	  }
+	  let csvContent = "Tanggal,Jenis,Kategori,Catatan,Nominal\n";
+	  dataTransaksi.forEach(t => {
+		csvContent += `${t.tanggal},${t.jenis.toUpperCase()},"${t.kategori}","${t.keterangan || '-'}",${t.nominal}\n`;
+	  });
 
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const blobUrl = URL.createObjectURL(blob);
-
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(blobUrl);
-
-      showToast('Laporan CSV berhasil diunduh!', 'success');
-    }
+	  // Memicu blok file Kodular
+	  if (window.AppInventor) {
+		window.AppInventor.setWebViewString('DOWNLOAD_CSV:' + csvContent);
+		showToast('Menyiapkan file laporan CSV...', 'info');
+	  } else {
+		const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+		const blobUrl = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = blobUrl;
+		a.download = `Laporan_KasPintar_${new Date().toISOString().split('T')[0]}.csv`;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(blobUrl);
+		showToast('Laporan CSV berhasil diunduh!', 'success');
+	  }
+	}
 
     function bukaModalKonfirmasiHapus() {
       bukaModalConfirm('Bersihkan Semua Data', 'Tindakan ini akan menghapus SELURUH data keuangan lokal di perangkat ini. Lanjutkan?', () => {
