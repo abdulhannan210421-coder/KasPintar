@@ -1,0 +1,12 @@
+{
+  "appId": "com.kaspintar.app",
+  "appName": "KasPintar Ultra AI",
+  "webDir": "www",
+  "server": {
+    "url": "https://abdulhannan210421-coder.github.io/KasPintar/",
+    "cleartext": true,
+    "allowNavigation": [
+      "username.github.io"
+    ]
+  }
+}

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">KasPintar Ultra AI</string>
+    <string name="title_activity_main">KasPintar Ultra AI</string>
+    <string name="package_name">com.kaspintar.app</string>
+    <string name="custom_url_scheme">com.kaspintar.app</string>
+</resources>
